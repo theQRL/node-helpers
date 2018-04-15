@@ -1,0 +1,31 @@
+{
+  "name": "@theqrl/node-helpers",
+  "version": "0.0.1",
+  "description": "QRL node helpers",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "mocha --reporter spec"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/theqrl/node-helpers.git"
+  },
+  "author": "QRL contributors <info@theqrl.org> (https://theqrl.org)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/theqrl/node-helpers/issues"
+  },
+  "publishConfig": {
+      "access": "public"
+    },
+  "homepage": "https://github.com/theqrl/node-helpers#readme",
+  "devDependencies": {
+    "chai": "^4.1.2",
+    "coveralls": "^3.0.0",
+    "istanbul": "^0.4.5",
+    "mocha": "^5.1.0"
+  }
+}
