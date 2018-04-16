@@ -1,6 +1,6 @@
 {
   "name": "@theqrl/node-helpers",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "QRL node helpers",
   "main": "index.js",
   "directories": {
