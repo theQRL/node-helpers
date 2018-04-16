@@ -1,15 +1,16 @@
 language: node_js
 node_js:
-- stable
+  - stable
 install:
-- npm install
+  - npm install
 script:
-- npm run cover
+  - npm run cover
 after_script: cat coverage/lcov.info | node_modules/coveralls/bin/coveralls.js
 deploy:
   provider: npm
   email: jp@theqrl.org
-  api_key: EoDg+30JjQ9xfrDgQOJyYUQLz9sxq8L4+fSpH7fQTNNr1S8pQx3h+jZ3Jg96JEsOTue0fBcUZkF/aW9N5IdKGdJLkWz9Ie68KXkBqPiDrCobJDXRNmGHthU8uKOduoOmi+9d0PFQMbtmxxindMhzBboKhRYIjUXUeEdA6dt5SetNMjHNYSfZrujFHDAnRjx6MQI9Tyy9VfFoT1Nd/4ivtyMOim5t054UxsdNDZJDG/zHcGU4/GcYqjUed9ZqazgqH/ePb/UgkFuOkj7f3CUZ0Bm/SFHwlwyc0YkTybiMhFiHkSnTMH4yqmi+T10MjmTBk44RfHSuuyJ6uheZX9xk0HOyL0tBwcmWzitmGxHfllHHkbDoi/+sHIjf5muIH7dDZtcdGDmeJIMMCsGLor3coKm/pVyRtIGu8UH6Pvf/oR35/aDbe2ZCuxkdHDAc1Xr/Tq7HehSP+C0+eDjUtfpUjpcKXrsk2/RBDHCFlPyS0WlRn2580xj//K3Scw+4tQI/jSw/GA6+sl5PDUUDvx+6O6FmkzPcUqikC7bKzHunEKZbSDp5cENQkcKFamfyRnmmS0T6P1ha3sZSKxjQCX5aYFPEzbxW3BjmkghhomR142bi7TiexnCYlR8OHTIPZ8A3Bnbz28r0/S3+tN1ct7t/TQjo/zy9roAg1Kuqw2KdnDU=
+  api_key:
+    secure: EoDg+30JjQ9xfrDgQOJyYUQLz9sxq8L4+fSpH7fQTNNr1S8pQx3h+jZ3Jg96JEsOTue0fBcUZkF/aW9N5IdKGdJLkWz9Ie68KXkBqPiDrCobJDXRNmGHthU8uKOduoOmi+9d0PFQMbtmxxindMhzBboKhRYIjUXUeEdA6dt5SetNMjHNYSfZrujFHDAnRjx6MQI9Tyy9VfFoT1Nd/4ivtyMOim5t054UxsdNDZJDG/zHcGU4/GcYqjUed9ZqazgqH/ePb/UgkFuOkj7f3CUZ0Bm/SFHwlwyc0YkTybiMhFiHkSnTMH4yqmi+T10MjmTBk44RfHSuuyJ6uheZX9xk0HOyL0tBwcmWzitmGxHfllHHkbDoi/+sHIjf5muIH7dDZtcdGDmeJIMMCsGLor3coKm/pVyRtIGu8UH6Pvf/oR35/aDbe2ZCuxkdHDAc1Xr/Tq7HehSP+C0+eDjUtfpUjpcKXrsk2/RBDHCFlPyS0WlRn2580xj//K3Scw+4tQI/jSw/GA6+sl5PDUUDvx+6O6FmkzPcUqikC7bKzHunEKZbSDp5cENQkcKFamfyRnmmS0T6P1ha3sZSKxjQCX5aYFPEzbxW3BjmkghhomR142bi7TiexnCYlR8OHTIPZ8A3Bnbz28r0/S3+tN1ct7t/TQjo/zy9roAg1Kuqw2KdnDU=
   on:
     tags: true
     branch: master
