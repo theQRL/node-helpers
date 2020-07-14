@@ -16,7 +16,7 @@
     "lint": "eslint .",
     "test": "./node_modules/.bin/mocha --require @babel/register",
     "debug": "node --inspect-brk ./dist/index.js",
-    "cover": "node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha -- -R spec test/*"
+    "cover": "node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha -- -R spec test/*.js"
   },
   "repository": {
     "type": "git",
