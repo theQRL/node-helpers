@@ -1,13 +1,17 @@
 {
   "name": "@theqrl/node-helpers",
-  "version": "0.0.2",
+  "version": "1.0.0",
   "description": "QRL node helpers",
   "main": "index.js",
   "directories": {
     "test": "test"
   },
   "scripts": {
-    "test": "mocha --reporter spec",
+    "start": "nodemon --exec babel-node ./src/index.js",
+    "build": "babel src --out-dir ./dist --source-maps",
+    "serve": "node ./dist/index.js",
+    "test": "./node_modules/.bin/mocha --require @babel/register",
+    "debug": "node --inspect-brk ./dist/index.js",
     "cover": "node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha -- -R spec test/*"
   },
   "repository": {
@@ -24,9 +28,15 @@
   },
   "homepage": "https://github.com/theqrl/node-helpers#readme",
   "devDependencies": {
-    "chai": "^4.1.2",
+    "@babel/cli": "^7.1.2",
+    "@babel/core": "^7.1.2",
+    "@babel/node": "^7.0.0",
+    "@babel/preset-env": "^7.1.0",
+    "@babel/register": "^7.0.0",
+    "chai": "^4.2.0",
     "coveralls": "^3.0.0",
     "istanbul": "^0.4.5",
-    "mocha": "^5.1.0"
+    "mocha": "^8.0.1",
+    "nodemon": "^1.18.4"
   }
 }
