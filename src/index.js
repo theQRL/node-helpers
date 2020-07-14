@@ -4,11 +4,5 @@ class QrlNode {
     this.ipAddress = ipAddress
     this.port = port
   }
-  /*
-   * version: reports current version
-   */
-  versionOld() {
-    return '1.0.0'
-  }
 }
 module.exports = QrlNode
