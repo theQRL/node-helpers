@@ -27,8 +27,8 @@ const testnet = new QrlNode(ip, port)
 make a connection to the node:
 
 ```javascript
-testnet.connect().then(client => {
-  console.log(client.connection) // true if connection successful
+testnet.connect().then(() => {
+  console.log(testnet.connection) // true if connection successful
 })
 ```
 
