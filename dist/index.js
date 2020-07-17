@@ -50,35 +50,35 @@ function loadGrpcBaseProto(_x) {
 }
 
 function _loadGrpcBaseProto() {
-  _loadGrpcBaseProto = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee2(grpcEndpoint) {
-    return regeneratorRuntime.wrap(function _callee2$(_context2) {
+  _loadGrpcBaseProto = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee4(grpcEndpoint) {
+    return regeneratorRuntime.wrap(function _callee4$(_context4) {
       while (1) {
-        switch (_context2.prev = _context2.next) {
+        switch (_context4.prev = _context4.next) {
           case 0:
-            return _context2.abrupt("return", protoLoader.load(PROTO_PATH, {}).then( /*#__PURE__*/function () {
-              var _ref = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(packageDefinition) {
+            return _context4.abrupt("return", protoLoader.load(PROTO_PATH, {}).then( /*#__PURE__*/function () {
+              var _ref3 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee3(packageDefinition) {
                 var packageObject, client, res, qrlProtoFilePath;
-                return regeneratorRuntime.wrap(function _callee$(_context) {
+                return regeneratorRuntime.wrap(function _callee3$(_context3) {
                   while (1) {
-                    switch (_context.prev = _context.next) {
+                    switch (_context3.prev = _context3.next) {
                       case 0:
                         packageObject = grpc.loadPackageDefinition(packageDefinition);
-                        _context.next = 3;
+                        _context3.next = 3;
                         return new packageObject.qrl.Base(grpcEndpoint, grpc.credentials.createInsecure());
 
                       case 3:
-                        client = _context.sent;
-                        _context.next = 6;
+                        client = _context3.sent;
+                        _context3.next = 6;
                         return clientGetNodeInfo(client);
 
                       case 6:
-                        res = _context.sent;
+                        res = _context3.sent;
                         qrlProtoFilePath = tmp.fileSync({
                           mode: '0644',
                           prefix: 'qrl-',
                           postfix: '.proto'
                         }).name;
-                        _context.next = 10;
+                        _context3.next = 10;
                         return writeFile(qrlProtoFilePath, res.grpcProto).then(function (fsErr) {
                           if (fsErr) {
                             throw new TypeError('tmp filesystem error');
@@ -86,27 +86,27 @@ function _loadGrpcBaseProto() {
                         });
 
                       case 10:
-                        return _context.abrupt("return", qrlProtoFilePath);
+                        return _context3.abrupt("return", qrlProtoFilePath);
 
                       case 11:
                       case "end":
-                        return _context.stop();
+                        return _context3.stop();
                     }
                   }
-                }, _callee);
+                }, _callee3);
               }));
 
-              return function (_x5) {
-                return _ref.apply(this, arguments);
+              return function (_x9) {
+                return _ref3.apply(this, arguments);
               };
             }()));
 
           case 1:
           case "end":
-            return _context2.stop();
+            return _context4.stop();
         }
       }
-    }, _callee2);
+    }, _callee4);
   }));
   return _loadGrpcBaseProto.apply(this, arguments);
 }
@@ -116,11 +116,11 @@ function loadGrpcProto(_x2, _x3) {
 }
 
 function _loadGrpcProto() {
-  _loadGrpcProto = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee3(protofile, endpoint) {
+  _loadGrpcProto = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee5(protofile, endpoint) {
     var options, packageDefinition, grpcObject, verified;
-    return regeneratorRuntime.wrap(function _callee3$(_context3) {
+    return regeneratorRuntime.wrap(function _callee5$(_context5) {
       while (1) {
-        switch (_context3.prev = _context3.next) {
+        switch (_context5.prev = _context5.next) {
           case 0:
             options = {
               keepCase: true,
@@ -129,16 +129,16 @@ function _loadGrpcProto() {
               defaults: true,
               oneofs: true
             };
-            _context3.next = 3;
+            _context5.next = 3;
             return protoLoader.load(protofile, options);
 
           case 3:
-            packageDefinition = _context3.sent;
-            _context3.next = 6;
+            packageDefinition = _context5.sent;
+            _context5.next = 6;
             return grpc.loadPackageDefinition(packageDefinition);
 
           case 6:
-            grpcObject = _context3.sent;
+            grpcObject = _context5.sent;
             verified = true; // QRLPROTO_SHA256.forEach(value => {
             //   if (value.memoryHash === calculatedObjectHash) {
             //     verified = true
@@ -147,11 +147,11 @@ function _loadGrpcProto() {
             // If the grpc object shasum matches, establish the grpc connection.
 
             if (!verified) {
-              _context3.next = 17;
+              _context5.next = 17;
               break;
             }
 
-            _context3.prev = 9;
+            _context5.prev = 9;
             qrlClient = createClient({
               protoPath: protofile,
               packageName: 'qrl',
@@ -164,12 +164,12 @@ function _loadGrpcProto() {
                 oneofs: true
               }
             }, endpoint);
-            return _context3.abrupt("return", qrlClient);
+            return _context5.abrupt("return", qrlClient);
 
           case 14:
-            _context3.prev = 14;
-            _context3.t0 = _context3["catch"](9);
-            throw new TypeError(_context3.t0);
+            _context5.prev = 14;
+            _context5.t0 = _context5["catch"](9);
+            throw new TypeError(_context5.t0);
 
           case 17:
             console.log('Unable to verifty proto file - have hashes changed?'); // eslint-disable-line no-console
@@ -178,10 +178,10 @@ function _loadGrpcProto() {
 
           case 19:
           case "end":
-            return _context3.stop();
+            return _context5.stop();
         }
       }
-    }, _callee3, null, [[9, 14]]);
+    }, _callee5, null, [[9, 14]]);
   }));
   return _loadGrpcProto.apply(this, arguments);
 }
@@ -191,30 +191,30 @@ function makeClient(_x4) {
 }
 
 function _makeClient() {
-  _makeClient = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee4(grpcEndpoint) {
+  _makeClient = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee6(grpcEndpoint) {
     var proto, client;
-    return regeneratorRuntime.wrap(function _callee4$(_context4) {
+    return regeneratorRuntime.wrap(function _callee6$(_context6) {
       while (1) {
-        switch (_context4.prev = _context4.next) {
+        switch (_context6.prev = _context6.next) {
           case 0:
-            _context4.next = 2;
+            _context6.next = 2;
             return loadGrpcBaseProto(grpcEndpoint);
 
           case 2:
-            proto = _context4.sent;
-            _context4.next = 5;
+            proto = _context6.sent;
+            _context6.next = 5;
             return loadGrpcProto(proto, grpcEndpoint);
 
           case 5:
-            client = _context4.sent;
-            return _context4.abrupt("return", client);
+            client = _context6.sent;
+            return _context6.abrupt("return", client);
 
           case 7:
           case "end":
-            return _context4.stop();
+            return _context6.stop();
         }
       }
-    }, _callee4);
+    }, _callee6);
   }));
   return _makeClient.apply(this, arguments);
 }
@@ -223,7 +223,7 @@ var QrlNode = /*#__PURE__*/function () {
   function QrlNode(ipAddress, port) {
     _classCallCheck(this, QrlNode);
 
-    this.version = '1.0.0';
+    this.version = '0.5.0';
     this.ipAddress = ipAddress;
     this.port = port;
     this.connection = false;
@@ -245,6 +245,83 @@ var QrlNode = /*#__PURE__*/function () {
 
         reject('Already connected... disconnect first or create a new connection');
       });
+    }
+  }, {
+    key: "disconnect",
+    value: function disconnect() {
+      this.client = null;
+      this.connection = false;
+    }
+  }, {
+    key: "validApi",
+    value: function validApi(apiCall) {
+      var client = this.client;
+      return client.then(function (result) {
+        try {
+          if (result[apiCall].path.substr(0, 5) === '/qrl.') {
+            return true;
+          }
+
+          return false;
+        } catch (error) {
+          return false;
+        }
+      });
+    }
+  }, {
+    key: "api",
+    value: function api(apiCall) {
+      var _this2 = this;
+
+      return new Promise( /*#__PURE__*/function () {
+        var _ref = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee2(resolve, reject) {
+          var client;
+          return regeneratorRuntime.wrap(function _callee2$(_context2) {
+            while (1) {
+              switch (_context2.prev = _context2.next) {
+                case 0:
+                  _context2.next = 2;
+                  return _this2.client;
+
+                case 2:
+                  client = _context2.sent;
+                  client[apiCall]({}, /*#__PURE__*/function () {
+                    var _ref2 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(error, response) {
+                      return regeneratorRuntime.wrap(function _callee$(_context) {
+                        while (1) {
+                          switch (_context.prev = _context.next) {
+                            case 0:
+                              if (error) {
+                                reject(error);
+                              }
+
+                              resolve(response);
+
+                            case 2:
+                            case "end":
+                              return _context.stop();
+                          }
+                        }
+                      }, _callee);
+                    }));
+
+                    return function (_x7, _x8) {
+                      return _ref2.apply(this, arguments);
+                    };
+                  }());
+
+                case 4:
+                case "end":
+                  return _context2.stop();
+              }
+            }
+          }, _callee2);
+        }));
+
+        return function (_x5, _x6) {
+          return _ref.apply(this, arguments);
+        };
+      }());
     }
   }]);
 
