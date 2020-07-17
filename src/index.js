@@ -124,10 +124,10 @@ class QrlNode {
     })
   }
 
-  api(apiCall) {
+  api(apiCall, request = {}) {
       return new Promise(async (resolve, reject) => {
         const client = await this.client
-        client[apiCall]({}, async (error, response) => {
+        client[apiCall](request, async (error, response) => {
           if (error) {
             reject(error)
           }
