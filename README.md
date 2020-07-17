@@ -13,15 +13,16 @@ A helper library for interacting with QRL nodes via GRPC
 import the helper class:
 
 ```javascript
-import QrlNode from '@theqrl/node-helpers'
+var QrlNode = require("@theqrl/node-helpers")
+// or for ES6 style imports: import QrlNode from '@theqrl/node-helpers'
 ```
 
 instantiate a new class object:
 
 ```javascript
-const ip = 'testnet-1.automated.theqrl.org'
-const port = '19009'
-const testnet = new QrlNode(ip, port)
+var ip = 'testnet-1.automated.theqrl.org'
+var port = '19009'
+var testnet = new QrlNode(ip, port)
 ```
 
 make a connection to the node:
@@ -35,6 +36,26 @@ testnet.connect().then(() => {
 make an API call:
 
 ```javascript
+testnet.api('GetStats').then((result) => {
+  console.log(result)
+})
+```
+
+Complete example:
+
+```javascript
+// example.js (requires node v10)
+
+var QrlNode = require("@theqrl/node-helpers")
+
+var ip = 'testnet-1.automated.theqrl.org'
+var port = '19009'
+var testnet = new QrlNode(ip, port)
+
+testnet.connect().then(() => {
+console.log(testnet.connection) // true if connection successful
+})
+
 testnet.api('GetStats').then((result) => {
   console.log(result)
 })
