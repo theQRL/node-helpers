@@ -100,4 +100,33 @@ describe('#mainnet', async function() {
     await expect(node()).to.eventually.equal('The Random Genesis')
   })
 
+  it('.disconnect() should reset client and return .connection = false', function() {
+    mainnet.disconnect()
+    var status = mainnet.connection
+    var client = mainnet.client
+    expect(status).to.equal(false)
+    expect(client).to.equal(null)
+  }) 
+
+  it('reconnection connection should have its Promise resolve', async function() {
+    async function node() {
+      return await mainnet.connect()
+    }
+    await expect(node()).to.eventually.not.be.rejected
+  })
+
+  it('expect GetOTS to be reported as a valid API call', async function() {
+    await expect(mainnet.validApi('GetOTS')).to.eventually.not.be.rejected
+    await expect(mainnet.validApi('GetOTS')).to.eventually.to.equal(true)
+  })  // await node to be ready before checking if API state is checkable
+
+  it('expect ThisIsInvalid to be reported as an invalid API call', async function() {
+    await expect(mainnet.validApi('ThisIsInvalid')).to.eventually.not.be.rejected
+    await expect(mainnet.validApi('ThisIsInvalid')).to.eventually.to.equal(false)
+  })
+
+  it('mainnet node should report SYNCED after a GetStats API call', async function() {
+    await expect(mainnet.api('GetStats')).to.eventually.have.property('node_info').property('state').equal('SYNCED')
+  })
+
 })

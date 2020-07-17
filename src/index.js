@@ -86,12 +86,13 @@ async function makeClient (grpcEndpoint) {
 
 class QrlNode {
   constructor(ipAddress, port) {
-    this.version = '1.0.0'
+    this.version = '0.5.0'
     this.ipAddress = ipAddress
     this.port = port
     this.connection = false
     this.client = null
   }
+  
   connect() {
     return new Promise((resolve, reject) => {
       if (this.connection === false) {
@@ -103,5 +104,37 @@ class QrlNode {
       reject('Already connected... disconnect first or create a new connection')
     })
   }
+
+  disconnect() {
+    this.client = null
+    this.connection = false
+  }
+
+  validApi(apiCall) {
+    const client = this.client
+    return client.then(result => {
+      try {
+        if (result[apiCall].path.substr(0,5) === '/qrl.') {
+          return true
+        }
+        return false
+      } catch (error) {
+        return false
+      }
+    })
+  }
+
+  api(apiCall) {
+      return new Promise(async (resolve, reject) => {
+        const client = await this.client
+        client[apiCall]({}, async (error, response) => {
+          if (error) {
+            reject(error)
+          }
+          resolve(response)
+        })
+      })
+  }
+
 }
 module.exports = QrlNode
