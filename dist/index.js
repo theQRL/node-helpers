@@ -273,6 +273,7 @@ var QrlNode = /*#__PURE__*/function () {
     value: function api(apiCall) {
       var _this2 = this;
 
+      var request = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
       return new Promise( /*#__PURE__*/function () {
         var _ref = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee2(resolve, reject) {
           var client;
@@ -285,7 +286,7 @@ var QrlNode = /*#__PURE__*/function () {
 
                 case 2:
                   client = _context2.sent;
-                  client[apiCall]({}, /*#__PURE__*/function () {
+                  client[apiCall](request, /*#__PURE__*/function () {
                     var _ref2 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(error, response) {
                       return regeneratorRuntime.wrap(function _callee$(_context) {
                         while (1) {
