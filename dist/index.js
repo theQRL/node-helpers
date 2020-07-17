@@ -30,7 +30,7 @@ var util = require('util');
 
 var readFile = util.promisify(fs.readFile);
 var writeFile = util.promisify(fs.writeFile);
-var PROTO_PATH = './src/qrlbase.proto';
+var PROTO_PATH = 'node_modules/@theqrl/qrlbase.proto/qrlbase.proto';
 var qrlClient = null;
 
 var clientGetNodeInfo = function clientGetNodeInfo(client) {
@@ -223,7 +223,7 @@ var QrlNode = /*#__PURE__*/function () {
   function QrlNode(ipAddress, port) {
     _classCallCheck(this, QrlNode);
 
-    this.version = '0.5.0';
+    this.version = '0.5.2';
     this.ipAddress = ipAddress;
     this.port = port;
     this.connection = false;
