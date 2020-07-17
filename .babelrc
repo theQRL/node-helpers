@@ -1,0 +1,13 @@
+{
+    "presets": ["@babel/preset-env"],
+    "env": {
+        "test": {
+            "plugins": [
+                "istanbul"
+            ]
+        }
+    },
+    "plugins": [
+        "@babel/plugin-transform-async-to-generator"
+    ]
+}

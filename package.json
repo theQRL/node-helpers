@@ -1,14 +1,22 @@
 {
   "name": "@theqrl/node-helpers",
-  "version": "0.0.2",
+  "version": "0.5.0",
   "description": "QRL node helpers",
-  "main": "index.js",
+  "main": "dist/index.js",
   "directories": {
     "test": "test"
   },
   "scripts": {
-    "test": "mocha --reporter spec",
-    "cover": "node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha -- -R spec test/*"
+    "start": "nodemon --exec babel-node ./src/index.js",
+    "dev": "npm-run-all --parallel dev:lint dev:test",
+    "dev:lint": "nodemon --ignore tests/ -x eslint .",
+    "dev:test": "nodemon --ignore tests/ -x npm run test",
+    "build": "babel src --out-dir ./dist --source-maps",
+    "serve": "node ./dist/index.js",
+    "lint": "eslint .",
+    "test": "nyc ./node_modules/.bin/mocha --require @babel/register",
+    "debug": "node --inspect-brk ./dist/index.js",
+    "cover": "node_modules/istanbul/lib/cli.js cover nyc node_modules/mocha/bin/_mocha -- -R spec test/*.js"
   },
   "repository": {
     "type": "git",
@@ -22,11 +30,51 @@
   "publishConfig": {
     "access": "public"
   },
+  "nyc": {
+    "reporter": [
+      "text-summary",
+      "html"
+    ],
+    "require": [
+      "@babel/register"
+    ],
+    "extension": [
+      ".js"
+    ],
+    "cache": false,
+    "temp-dir": "./dist/tests/.nyc-temp",
+    "report-dir": "./dist/tests/nyc"
+  },
   "homepage": "https://github.com/theqrl/node-helpers#readme",
   "devDependencies": {
-    "chai": "^4.1.2",
+    "@babel/cli": "^7.1.2",
+    "@babel/core": "^7.1.2",
+    "@babel/node": "^7.0.0",
+    "@babel/plugin-transform-async-to-generator": "^7.10.4",
+    "@babel/preset-env": "^7.1.0",
+    "@babel/register": "^7.0.0",
+    "babel-eslint": "^10.1.0",
+    "babel-plugin-istanbul": "^6.0.0",
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
     "coveralls": "^3.0.0",
+    "eslint": "^7.4.0",
+    "eslint-config-airbnb": "^18.2.0",
+    "eslint-config-import": "^0.13.0",
+    "eslint-plugin-import": "^2.22.0",
+    "eslint-plugin-modules": "^1.1.1",
     "istanbul": "^0.4.5",
-    "mocha": "^5.1.0"
+    "mocha": "^8.0.1",
+    "nodemon": "^1.18.4",
+    "npm-run-all": "^4.1.5",
+    "nyc": "^15.1.0"
+  },
+  "dependencies": {
+    "@babel/polyfill": "^7.10.4",
+    "@grpc/grpc-js": "^1.1.2",
+    "@grpc/proto-loader": "^0.5.5",
+    "google-protobuf": "^3.12.2",
+    "grpc-js-kit": "^0.1.0",
+    "tmp": "^0.2.1"
   }
 }
