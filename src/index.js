@@ -13,7 +13,7 @@ const writeFile = util.promisify(fs.writeFile)
 const PROTO_PATH = 'node_modules/@theqrl/qrlbase.proto/qrlbase.proto'
 let qrlClient = null
 
-const clientGetNodeInfo = client => {
+const clientGetNodeInfo = async client => {
   return new Promise((resolve, reject) => {
     client.getNodeInfo({}, (error, response) => {
       if (error) {
@@ -21,92 +21,113 @@ const clientGetNodeInfo = client => {
       }
       resolve(response)
     })
+  }).catch(error => {
+    throw new Error('Unable to get valid proto file (' + error + ')')
   })
 }
 
 async function checkProtoHash(file) {
-  return readFile(file).then(async contents => {
-    const protoFileWordArray = CryptoJS.lib.WordArray.create(contents.toString())
-    const calculatedProtoHash = CryptoJS.SHA256(protoFileWordArray).toString(CryptoJS.enc.Hex)
-    let verified = false
-    QRLPROTO_SHA256.forEach(value => {
-      if (value.protoSha256 === calculatedProtoHash) {
-        verified = true
-      }
+  return new Promise((resolve, reject) => {
+    return readFile(file).then(async contents => {
+      const protoFileWordArray = CryptoJS.lib.WordArray.create(contents.toString())
+      const calculatedProtoHash = CryptoJS.SHA256(protoFileWordArray).toString(CryptoJS.enc.Hex)
+      let verified = false
+      QRLPROTO_SHA256.forEach(value => {
+        if (value.protoHash) {
+          if (value.protoHash === calculatedProtoHash) {
+            verified = true
+          }
+        }
+      })
+      resolve(verified)
+    }).catch(error => {
+      reject(error)
     })
-    return verified
   }).catch(error => {
-    throw new Error(error)
+    throw new Error('Unable to check proto file hash (' + error + ')')
   })
 }
 
 async function loadGrpcBaseProto(grpcEndpoint) {
-  return protoLoader.load(PROTO_PATH, {}).then(async packageDefinition => {
-    const packageObject = grpc.loadPackageDefinition(packageDefinition)
-    const client = await new packageObject.qrl.Base(grpcEndpoint, grpc.credentials.createInsecure())
-    const res = await clientGetNodeInfo(client)
-    const qrlProtoFilePath = tmp.fileSync({mode: '0644', prefix: 'qrl-', postfix: '.proto'}).name
-    await writeFile(qrlProtoFilePath, res.grpcProto).then(fsErr => {
-      if (fsErr) {
-        throw new TypeError('tmp filesystem error')
-      }
+  return new Promise(async (resolve, reject) => {
+    return protoLoader.load(PROTO_PATH, {}).then(async packageDefinition => {
+      const packageObject = grpc.loadPackageDefinition(packageDefinition)
+      const client = await new packageObject.qrl.Base(grpcEndpoint, grpc.credentials.createInsecure())
+      const res = await clientGetNodeInfo(client)
+      const qrlProtoFilePath = tmp.fileSync({mode: '0644', prefix: 'qrl-', postfix: '.proto'}).name
+      await writeFile(qrlProtoFilePath, res.grpcProto).then(fsErr => {
+        if (fsErr) {
+          reject('tmp filesystem error')
+        }
+      })
+      resolve(qrlProtoFilePath)
     })
-    return qrlProtoFilePath
+  }).catch(error => {
+    throw new Error('Unable to load grpc base proto (' + error + ')')
   })
 } 
 
 async function loadGrpcProto(protofile, endpoint) {
-  const options = {
-    keepCase: true,
-    longs: String,
-    enums: String,
-    defaults: true,
-    oneofs: true,
-  }
-  const packageDefinition = await protoLoader.load(protofile, options)
-  const grpcObject = await grpc.loadPackageDefinition(packageDefinition)
-  const grpcObjectString = JSON.stringify(grpcObject.qrl)
-  const protoObjectWordArray = CryptoJS.lib.WordArray.create(grpcObjectString)
-  const calculatedObjectHash = CryptoJS.SHA256(protoObjectWordArray).toString(CryptoJS.enc.Hex)
-  let verified = false
-  QRLPROTO_SHA256.forEach(value => {
-    if (value.memoryHash === calculatedObjectHash) {
-      verified = true
+  return new Promise(async (resolve, reject) => {
+    const options = {
+      keepCase: true,
+      longs: String,
+      enums: String,
+      defaults: true,
+      oneofs: true,
     }
+    const packageDefinition = await protoLoader.load(protofile, options)
+    const grpcObject = await grpc.loadPackageDefinition(packageDefinition)
+    const grpcObjectString = JSON.stringify(grpcObject.qrl)
+    const protoObjectWordArray = CryptoJS.lib.WordArray.create(grpcObjectString)
+    const calculatedObjectHash = CryptoJS.SHA256(protoObjectWordArray).toString(CryptoJS.enc.Hex)
+    let verified = false
+    QRLPROTO_SHA256.forEach(value => {
+      if (value.objectHash) {
+        if (value.objectHash === calculatedObjectHash) {
+          verified = true
+        }
+      }
+    })
+    // If the grpc object shasum matches, establish the grpc connection.
+    if (verified) {
+      try {
+        qrlClient = createClient({
+          protoPath: protofile,
+          packageName: 'qrl',
+          serviceName: 'PublicAPI',
+          options: {
+            keepCase: true,
+            longs: String,
+            enums: String,
+            defaults: true,
+            oneofs: true,
+          },
+        }, endpoint)
+        resolve(qrlClient)
+      } catch (error) {
+        reject(error)
+      }
+    }
+    console.log('Unable to verifty proto file - have hashes changed?') // eslint-disable-line no-console
+    reject('Unable to verify proto file')
+  }).catch(error => {
+    throw new Error('Unable to load grpc proto file (' + error + ')')
   })
-  // If the grpc object shasum matches, establish the grpc connection.
-  if (verified) {
-    try {
-      qrlClient = createClient({
-        protoPath: protofile,
-        packageName: 'qrl',
-        serviceName: 'PublicAPI',
-        options: {
-          keepCase: true,
-          longs: String,
-          enums: String,
-          defaults: true,
-          oneofs: true,
-        },
-      }, endpoint)
-      return qrlClient
-    } catch (error) {
-      throw new TypeError(error)
-    }
-
-  }
-  console.log('Unable to verifty proto file - have hashes changed?') // eslint-disable-line no-console
-  throw new TypeError('Unable to verify proto file')
 }
 
 async function makeClient (grpcEndpoint) {
-  const proto = await loadGrpcBaseProto(grpcEndpoint)
-  const validHash = await checkProtoHash(proto)
-  if (validHash) {
-    const client = await loadGrpcProto(proto, grpcEndpoint)
-    return client
-  }
-  return null
+  return new Promise(async (resolve, reject) => {
+    const proto = await loadGrpcBaseProto(grpcEndpoint)
+    const validHash = await checkProtoHash(proto)
+    if (validHash) {
+      const client = await loadGrpcProto(proto, grpcEndpoint)
+      resolve(client)
+    }
+    reject(null)
+  }).catch(error => {
+    throw new Error('Unable to make client (' + error + ')')
+  })
 }
 
 class QrlNode {
@@ -118,15 +139,17 @@ class QrlNode {
     this.client = null
   }
   
-  connect() {
-    return new Promise((resolve, reject) => {
+  async connect() {
+    return new Promise(async (resolve, reject) => {
       if (this.connection === false) {
-        const client = makeClient(`${this.ipAddress}:${this.port}`)
+        const client = await makeClient(`${this.ipAddress}:${this.port}`)
         this.connection = true
         this.client = client
         resolve(client)
       }
       reject('Already connected... disconnect first or create a new connection')
+    }).catch(error => {
+      throw new Error('Unable to connect (' + error + ')')
     })
   }
 
@@ -135,8 +158,8 @@ class QrlNode {
     this.connection = false
   }
 
-  validApi(apiCall) {
-    const client = this.client
+  async validApi(apiCall) {
+    const client = await this.client
     return client.then(result => {
       try {
         if (result[apiCall].path.substr(0,5) === '/qrl.') {
@@ -158,8 +181,11 @@ class QrlNode {
           }
           resolve(response)
         })
+      }).catch(error => {
+        throw new Error('Unable to make API call (' + error + ')')
       })
-  }
+    }
 
 }
+
 module.exports = QrlNode
