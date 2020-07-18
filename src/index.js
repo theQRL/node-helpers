@@ -1,8 +1,10 @@
 require("@babel/polyfill")
 const grpc = require('@grpc/grpc-js')
 const protoLoader = require('@grpc/proto-loader')
-const {createClient} = require('grpc-js-kit')
+const CryptoJS = require('crypto-js')
+const { createClient } = require('grpc-js-kit')
 const { promisify } = require('util')
+const { QRLPROTO_SHA256 } = require('@theqrl/qrl-proto-sha256')
 const tmp = require('tmp')
 const fs = require('fs')
 const util = require('util')
@@ -19,6 +21,22 @@ const clientGetNodeInfo = client => {
       }
       resolve(response)
     })
+  })
+}
+
+async function checkProtoHash(file) {
+  return readFile(file).then(async contents => {
+    const protoFileWordArray = CryptoJS.lib.WordArray.create(contents.toString())
+    const calculatedProtoHash = CryptoJS.SHA256(protoFileWordArray).toString(CryptoJS.enc.Hex)
+    let verified = false
+    QRLPROTO_SHA256.forEach(value => {
+      if (value.protoSha256 === calculatedProtoHash) {
+        verified = true
+      }
+    })
+    return verified
+  }).catch(error => {
+    throw new Error(error)
   })
 }
 
@@ -47,12 +65,15 @@ async function loadGrpcProto(protofile, endpoint) {
   }
   const packageDefinition = await protoLoader.load(protofile, options)
   const grpcObject = await grpc.loadPackageDefinition(packageDefinition)
-  let verified = true
-  // QRLPROTO_SHA256.forEach(value => {
-  //   if (value.memoryHash === calculatedObjectHash) {
-  //     verified = true
-  //   }
-  // })
+  const grpcObjectString = JSON.stringify(grpcObject.qrl)
+  const protoObjectWordArray = CryptoJS.lib.WordArray.create(grpcObjectString)
+  const calculatedObjectHash = CryptoJS.SHA256(protoObjectWordArray).toString(CryptoJS.enc.Hex)
+  let verified = false
+  QRLPROTO_SHA256.forEach(value => {
+    if (value.memoryHash === calculatedObjectHash) {
+      verified = true
+    }
+  })
   // If the grpc object shasum matches, establish the grpc connection.
   if (verified) {
     try {
@@ -80,8 +101,12 @@ async function loadGrpcProto(protofile, endpoint) {
 
 async function makeClient (grpcEndpoint) {
   const proto = await loadGrpcBaseProto(grpcEndpoint)
-  const client = await loadGrpcProto(proto, grpcEndpoint)
-  return client
+  const validHash = await checkProtoHash(proto)
+  if (validHash) {
+    const client = await loadGrpcProto(proto, grpcEndpoint)
+    return client
+  }
+  return null
 }
 
 class QrlNode {
