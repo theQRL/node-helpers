@@ -5,17 +5,15 @@ var chai = require("chai")
 chai.use(chaiAsPromised)
 var expect = chai.expect
 var assert = chai.assert
-var sinon = require("sinon")
 var ip = 'mainnet-1.automated.theqrl.org'
 var port = '19009'
 
-describe('#mainnet', function() {
-  before(() => {
-    // sinon.stub(console, 'log')  // disable console.log
-    // sinon.stub(console, 'info')  // disable console.info
-    // sinon.stub(console, 'warn')  // disable console.warn
-    // sinon.stub(console, 'error')  // disable console.error
+process.on('unhandledRejection', error => {
+  // uncomment to review unhandled Promise rejections to debug
+  // console.log('unhandledRejection', error.message)
 })
+
+describe('#mainnet', function() {
   var mainnet = new QrlNode(ip, port)
   // *may* need to increase the time between tests if network is slow
   // beforeEach(done => setTimeout(done, 500))
@@ -75,15 +73,13 @@ describe('#mainnet', function() {
     }
     await expect(node()).to.eventually.be.rejected
   })
-
-  // this test is broken!
-  /*
+  
   it('an invalid node ip/port should throw an error', async function() {
     async function node() {
       const badip = 'bad-ip.automated.theqrl.org'
       const badport = '19009'
       let id = null
-      var testnet = await new QrlNode(badip, badport)
+      var testnet = new QrlNode(badip, badport)
       // console.log(testnet)
       try {
         var client = await testnet.connect()
@@ -92,9 +88,8 @@ describe('#mainnet', function() {
       }
       console.log(testnet.connection)
     }
-    const x = await node()
-    await expect(x).to
-  }) */
+    await expect(node()).to.eventually.throw
+  })
 
   it('testnet node should have \'The Random Genesis\' as its network_id', async function() {
     async function node() {

@@ -16,6 +16,7 @@ const fs = require('fs')
 const util = require('util')
 const readFile = util.promisify(fs.readFile)
 const writeFile = util.promisify(fs.writeFile)
+const dns = require('dns').promises
 const PROTO_PATH = 'node_modules/@theqrl/qrlbase.proto/qrlbase.proto'
 let qrlClient = null
 
@@ -138,6 +139,12 @@ async function makeClient(grpcEndpoint) {
   }
 }
 
+async function validate(node) {
+  return dns.lookup(node).catch(error => {
+    throw new Error(error)
+  })  
+}
+
 class QrlNode {
   constructor(ipAddress, port) {
     this.version = '0.5.2'
@@ -145,6 +152,13 @@ class QrlNode {
     this.client = null
     this.ipAddress = ipAddress
     this.port = port
+    validate(ipAddress).then((err, res) => {
+      if (err) {
+        throw new Error(err)
+      }
+    }).catch(error => {
+      throw new Error(error)
+    })  
   }
 
   async connect() {
