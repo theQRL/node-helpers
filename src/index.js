@@ -140,9 +140,7 @@ async function makeClient(grpcEndpoint) {
 }
 
 async function validate(node) {
-  return dns.lookup(node).catch(error => {
-    throw new Error(error)
-  })  
+  return dns.lookup(node)
 }
 
 class QrlNode {
@@ -154,21 +152,24 @@ class QrlNode {
     this.port = port
     validate(ipAddress).then((err, res) => {
       if (err) {
-        throw new Error(err)
+        return false
       }
+      return true
     }).catch(error => {
-      throw new Error(error)
+      console.log(error)
     })  
   }
 
   async connect() {
-    if (this.connection === false) {
-      const client = await makeClient(`${this.ipAddress}:${this.port}`)
-      this.connection = true
-      this.client = client
-      return client
-    }
-    throw new Error('Already connected... disconnect first or create a new connection')
+    return new Promise(async (resolve, reject) => {
+      if (this.connection === false) {
+        const client = await makeClient(`${this.ipAddress}:${this.port}`)
+        this.connection = true
+        this.client = client
+        resolve(client)
+      }
+      reject('Already connected... disconnect first or create a new connection')
+    })
   }
 
   disconnect() {
