@@ -15,9 +15,6 @@ var port = '19009'
 
 describe('#mainnet', function() {
   var mainnet = new QrlNode(ip, port)
-  // *may* need to increase the time between tests if network is slow
-  // beforeEach(done => setTimeout(done, 500))
-  this.timeout(20000) // 20 second timeout on tests
   it(`.version should report same version as in npm package.json file (=${process.env.npm_package_version})`, function() {
     var result = mainnet.version
     expect(result).to.equal(process.env.npm_package_version)
