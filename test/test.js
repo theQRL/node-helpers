@@ -8,10 +8,10 @@ var assert = chai.assert
 var ip = 'mainnet-1.automated.theqrl.org'
 var port = '19009'
 
-process.on('unhandledRejection', error => {
+// process.on('unhandledRejection', error => {
   // uncomment to review unhandled Promise rejections to debug
   // console.log('unhandledRejection', error.message)
-})
+// })
 
 describe('#mainnet', function() {
   var mainnet = new QrlNode(ip, port)
@@ -36,9 +36,8 @@ describe('#mainnet', function() {
   it('mainnet node should report SYNCED', async function() {
     async function node() {
       return new Promise(async (resolve, reject) => {
-        let id = null
         const client = await mainnet.connect()
-        client.GetStats({}, async (error, response) => {
+        return await client.GetStats({}, async (error, response) => {
           if (error) {
             throw new Error(error)
           }
@@ -46,7 +45,7 @@ describe('#mainnet', function() {
         })
       })
     }
-    await expect(node()).to.eventually.equal('SYNCED')
+    await expect(await node()).to.equal('SYNCED')
   })
 
   it('expect GetOTS to function if called from existing client connection', async function() {
@@ -74,21 +73,20 @@ describe('#mainnet', function() {
     await expect(node()).to.eventually.be.rejected
   })
   
-  it('an invalid node ip/port should throw an error', async function() {
+  it('an invalid node ip/port should result in a null connecion', async function() {
     async function node() {
       const badip = 'bad-ip.automated.theqrl.org'
       const badport = '19009'
       let id = null
       var testnet = new QrlNode(badip, badport)
-      // console.log(testnet)
       try {
         var client = await testnet.connect()
       } catch (error) {
-        console.log('er:', error)
+        // consolse.log('er:', error)
       }
-      console.log(testnet.connection)
+      return testnet.connection
     }
-    await expect(node()).to.eventually.throw
+    await expect(node()).to.eventually.equal(false)
   })
 
   it('testnet node should have \'The Random Genesis\' as its network_id', async function() {
