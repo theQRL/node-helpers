@@ -33,7 +33,7 @@ testnet.connect().then(() => {
 })
 ```
 
-make an API call:
+make an API call (needs a node connection):
 
 ```javascript
 testnet.api('GetStats').then((result) => {
@@ -53,12 +53,14 @@ var port = '19009'
 var testnet = new QrlNode(ip, port)
 
 testnet.connect().then(() => {
-console.log(testnet.connection) // true if connection successful
-})
+  console.log(testnet.connection); // true if connection successful
+  
+  // we can now start using the API
+  testnet.api('GetStats').then((result) => {
+    console.log(result);
+  });
 
-testnet.api('GetStats').then((result) => {
-  console.log(result)
-})
+});
 ```
 
 ## Development of this module

@@ -10,17 +10,22 @@ function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try
 
 function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
 
-require("@babel/polyfill");
+require('@babel/polyfill');
 
 var grpc = require('@grpc/grpc-js');
 
 var protoLoader = require('@grpc/proto-loader');
+
+var CryptoJS = require('crypto-js');
 
 var _require = require('grpc-js-kit'),
     createClient = _require.createClient;
 
 var _require2 = require('util'),
     promisify = _require2.promisify;
+
+var _require3 = require('@theqrl/qrl-proto-sha256'),
+    QRLPROTO_SHA256 = _require3.QRLPROTO_SHA256;
 
 var tmp = require('tmp');
 
@@ -33,82 +38,92 @@ var writeFile = util.promisify(fs.writeFile);
 var PROTO_PATH = 'node_modules/@theqrl/qrlbase.proto/qrlbase.proto';
 var qrlClient = null;
 
-var clientGetNodeInfo = function clientGetNodeInfo(client) {
-  return new Promise(function (resolve, reject) {
-    client.getNodeInfo({}, function (error, response) {
-      if (error) {
-        reject(error);
-      }
+function clientGetNodeInfo(client) {
+  try {
+    return new Promise(function (resolve, reject) {
+      client.getNodeInfo({}, function (error, response) {
+        if (error) {
+          reject(error);
+        }
 
-      resolve(response);
+        resolve(response);
+      });
     });
-  });
-};
-
-function loadGrpcBaseProto(_x) {
-  return _loadGrpcBaseProto.apply(this, arguments);
+  } catch (error) {
+    console.log(error);
+  }
 }
 
-function _loadGrpcBaseProto() {
-  _loadGrpcBaseProto = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee4(grpcEndpoint) {
-    return regeneratorRuntime.wrap(function _callee4$(_context4) {
-      while (1) {
-        switch (_context4.prev = _context4.next) {
-          case 0:
-            return _context4.abrupt("return", protoLoader.load(PROTO_PATH, {}).then( /*#__PURE__*/function () {
-              var _ref3 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee3(packageDefinition) {
-                var packageObject, client, res, qrlProtoFilePath;
-                return regeneratorRuntime.wrap(function _callee3$(_context3) {
-                  while (1) {
-                    switch (_context3.prev = _context3.next) {
-                      case 0:
-                        packageObject = grpc.loadPackageDefinition(packageDefinition);
-                        _context3.next = 3;
-                        return new packageObject.qrl.Base(grpcEndpoint, grpc.credentials.createInsecure());
-
-                      case 3:
-                        client = _context3.sent;
-                        _context3.next = 6;
-                        return clientGetNodeInfo(client);
-
-                      case 6:
-                        res = _context3.sent;
-                        qrlProtoFilePath = tmp.fileSync({
-                          mode: '0644',
-                          prefix: 'qrl-',
-                          postfix: '.proto'
-                        }).name;
-                        _context3.next = 10;
-                        return writeFile(qrlProtoFilePath, res.grpcProto).then(function (fsErr) {
-                          if (fsErr) {
-                            throw new TypeError('tmp filesystem error');
-                          }
-                        });
-
-                      case 10:
-                        return _context3.abrupt("return", qrlProtoFilePath);
-
-                      case 11:
-                      case "end":
-                        return _context3.stop();
-                    }
-                  }
-                }, _callee3);
-              }));
-
-              return function (_x9) {
-                return _ref3.apply(this, arguments);
-              };
-            }()));
-
-          case 1:
-          case "end":
-            return _context4.stop();
+function checkProtoHash(file) {
+  return readFile(file).then(function (contents) {
+    // console.log(contents)
+    var protoFileWordArray = CryptoJS.lib.WordArray.create(contents.toString());
+    var calculatedProtoHash = CryptoJS.SHA256(protoFileWordArray).toString(CryptoJS.enc.Hex);
+    var verified = false;
+    QRLPROTO_SHA256.forEach(function (value) {
+      if (value.protoHash) {
+        if (value.protoHash === calculatedProtoHash) {
+          verified = true;
         }
       }
-    }, _callee4);
-  }));
-  return _loadGrpcBaseProto.apply(this, arguments);
+    });
+    return verified;
+  });
+}
+
+function loadGrpcBaseProto(grpcEndpoint) {
+  return protoLoader.load(PROTO_PATH, {}).then( /*#__PURE__*/function () {
+    var _ref = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(packageDefinition) {
+      var packageObject, client, res, qrlProtoFilePath;
+      return regeneratorRuntime.wrap(function _callee$(_context) {
+        while (1) {
+          switch (_context.prev = _context.next) {
+            case 0:
+              _context.prev = 0;
+              _context.next = 3;
+              return grpc.loadPackageDefinition(packageDefinition);
+
+            case 3:
+              packageObject = _context.sent;
+              _context.next = 6;
+              return new packageObject.qrl.Base(grpcEndpoint, grpc.credentials.createInsecure());
+
+            case 6:
+              client = _context.sent;
+              _context.next = 9;
+              return clientGetNodeInfo(client);
+
+            case 9:
+              res = _context.sent;
+              qrlProtoFilePath = tmp.fileSync({
+                mode: '0644',
+                prefix: 'qrl-',
+                postfix: '.proto'
+              }).name;
+              writeFile(qrlProtoFilePath, res.grpcProto).then(function (fsErr) {
+                if (fsErr) {
+                  console.log('tmp filesystem error');
+                }
+              });
+              return _context.abrupt("return", qrlProtoFilePath);
+
+            case 15:
+              _context.prev = 15;
+              _context.t0 = _context["catch"](0);
+              console.log('Unable to load grpc base proto (' + _context.t0 + ')');
+
+            case 18:
+            case "end":
+              return _context.stop();
+          }
+        }
+      }, _callee, null, [[0, 15]]);
+    }));
+
+    return function (_x) {
+      return _ref.apply(this, arguments);
+    };
+  }());
 }
 
 function loadGrpcProto(_x2, _x3) {
@@ -116,12 +131,13 @@ function loadGrpcProto(_x2, _x3) {
 }
 
 function _loadGrpcProto() {
-  _loadGrpcProto = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee5(protofile, endpoint) {
-    var options, packageDefinition, grpcObject, verified;
-    return regeneratorRuntime.wrap(function _callee5$(_context5) {
+  _loadGrpcProto = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee7(protofile, endpoint) {
+    var options, packageDefinition, grpcObject, grpcObjectString, protoObjectWordArray, calculatedObjectHash, verified;
+    return regeneratorRuntime.wrap(function _callee7$(_context7) {
       while (1) {
-        switch (_context5.prev = _context5.next) {
+        switch (_context7.prev = _context7.next) {
           case 0:
+            _context7.prev = 0;
             options = {
               keepCase: true,
               longs: String,
@@ -129,30 +145,31 @@ function _loadGrpcProto() {
               defaults: true,
               oneofs: true
             };
-            _context5.next = 3;
+            _context7.next = 4;
             return protoLoader.load(protofile, options);
 
-          case 3:
-            packageDefinition = _context5.sent;
-            _context5.next = 6;
-            return grpc.loadPackageDefinition(packageDefinition);
-
-          case 6:
-            grpcObject = _context5.sent;
-            verified = true; // QRLPROTO_SHA256.forEach(value => {
-            //   if (value.memoryHash === calculatedObjectHash) {
-            //     verified = true
-            //   }
-            // })
-            // If the grpc object shasum matches, establish the grpc connection.
+          case 4:
+            packageDefinition = _context7.sent;
+            grpcObject = grpc.loadPackageDefinition(packageDefinition);
+            grpcObjectString = JSON.stringify(grpcObject.qrl);
+            protoObjectWordArray = CryptoJS.lib.WordArray.create(grpcObjectString);
+            calculatedObjectHash = CryptoJS.SHA256(protoObjectWordArray).toString(CryptoJS.enc.Hex);
+            verified = false;
+            QRLPROTO_SHA256.forEach(function (value) {
+              if (value.objectHash) {
+                if (value.objectHash === calculatedObjectHash) {
+                  verified = true;
+                }
+              }
+            }); // If the grpc object shasum matches, establish the grpc connection.
 
             if (!verified) {
-              _context5.next = 17;
+              _context7.next = 16;
               break;
             }
 
-            _context5.prev = 9;
-            qrlClient = createClient({
+            _context7.next = 14;
+            return createClient({
               protoPath: protofile,
               packageName: 'qrl',
               serviceName: 'PublicAPI',
@@ -164,24 +181,26 @@ function _loadGrpcProto() {
                 oneofs: true
               }
             }, endpoint);
-            return _context5.abrupt("return", qrlClient);
 
           case 14:
-            _context5.prev = 14;
-            _context5.t0 = _context5["catch"](9);
-            throw new TypeError(_context5.t0);
+            qrlClient = _context7.sent;
+            return _context7.abrupt("return", qrlClient);
 
-          case 17:
-            console.log('Unable to verifty proto file - have hashes changed?'); // eslint-disable-line no-console
+          case 16:
+            _context7.next = 21;
+            break;
 
-            throw new TypeError('Unable to verify proto file');
+          case 18:
+            _context7.prev = 18;
+            _context7.t0 = _context7["catch"](0);
+            console.log('Unable to load grpc proto file (' + _context7.t0 + ')');
 
-          case 19:
+          case 21:
           case "end":
-            return _context5.stop();
+            return _context7.stop();
         }
       }
-    }, _callee5, null, [[9, 14]]);
+    }, _callee7, null, [[0, 18]]);
   }));
   return _loadGrpcProto.apply(this, arguments);
 }
@@ -191,30 +210,56 @@ function makeClient(_x4) {
 }
 
 function _makeClient() {
-  _makeClient = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee6(grpcEndpoint) {
-    var proto, client;
-    return regeneratorRuntime.wrap(function _callee6$(_context6) {
+  _makeClient = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee8(grpcEndpoint) {
+    var proto, validHash, client;
+    return regeneratorRuntime.wrap(function _callee8$(_context8) {
       while (1) {
-        switch (_context6.prev = _context6.next) {
+        switch (_context8.prev = _context8.next) {
           case 0:
-            _context6.next = 2;
+            _context8.prev = 0;
+            _context8.next = 3;
             return loadGrpcBaseProto(grpcEndpoint);
 
-          case 2:
-            proto = _context6.sent;
-            _context6.next = 5;
-            return loadGrpcProto(proto, grpcEndpoint);
+          case 3:
+            proto = _context8.sent;
 
-          case 5:
-            client = _context6.sent;
-            return _context6.abrupt("return", client);
+            if (!proto) {
+              _context8.next = 13;
+              break;
+            }
+
+            _context8.next = 7;
+            return checkProtoHash(proto);
 
           case 7:
+            validHash = _context8.sent;
+
+            if (!validHash) {
+              _context8.next = 13;
+              break;
+            }
+
+            _context8.next = 11;
+            return loadGrpcProto(proto, grpcEndpoint);
+
+          case 11:
+            client = _context8.sent;
+            return _context8.abrupt("return", client);
+
+          case 13:
+            return _context8.abrupt("return", null);
+
+          case 16:
+            _context8.prev = 16;
+            _context8.t0 = _context8["catch"](0);
+            console.log('Unable to make client (' + _context8.t0 + ')');
+
+          case 19:
           case "end":
-            return _context6.stop();
+            return _context8.stop();
         }
       }
-    }, _callee6);
+    }, _callee8, null, [[0, 16]]);
   }));
   return _makeClient.apply(this, arguments);
 }
@@ -224,10 +269,10 @@ var QrlNode = /*#__PURE__*/function () {
     _classCallCheck(this, QrlNode);
 
     this.version = '0.5.2';
-    this.ipAddress = ipAddress;
-    this.port = port;
     this.connection = false;
     this.client = null;
+    this.ipAddress = ipAddress;
+    this.port = port;
   }
 
   _createClass(QrlNode, [{
@@ -235,16 +280,52 @@ var QrlNode = /*#__PURE__*/function () {
     value: function connect() {
       var _this = this;
 
-      return new Promise(function (resolve, reject) {
-        if (_this.connection === false) {
-          var client = makeClient("".concat(_this.ipAddress, ":").concat(_this.port));
-          _this.connection = true;
-          _this.client = client;
-          resolve(client);
-        }
+      try {
+        return new Promise( /*#__PURE__*/function () {
+          var _ref2 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee2(resolve, reject) {
+            var client;
+            return regeneratorRuntime.wrap(function _callee2$(_context2) {
+              while (1) {
+                switch (_context2.prev = _context2.next) {
+                  case 0:
+                    if (!(_this.connection === false)) {
+                      _context2.next = 7;
+                      break;
+                    }
 
-        reject('Already connected... disconnect first or create a new connection');
-      });
+                    _context2.next = 3;
+                    return makeClient("".concat(_this.ipAddress, ":").concat(_this.port));
+
+                  case 3:
+                    client = _context2.sent;
+
+                    if (client === null) {
+                      _this.connection = false;
+                    } else {
+                      _this.connection = true;
+                    }
+
+                    _this.client = client;
+                    resolve(client);
+
+                  case 7:
+                    reject('Already connected... disconnect first or create a new connection');
+
+                  case 8:
+                  case "end":
+                    return _context2.stop();
+                }
+              }
+            }, _callee2);
+          }));
+
+          return function (_x5, _x6) {
+            return _ref2.apply(this, arguments);
+          };
+        }());
+      } catch (error) {
+        console.log(error);
+      }
     }
   }, {
     key: "disconnect",
@@ -254,76 +335,132 @@ var QrlNode = /*#__PURE__*/function () {
     }
   }, {
     key: "validApi",
-    value: function validApi(apiCall) {
-      var client = this.client;
-      return client.then(function (result) {
-        try {
-          if (result[apiCall].path.substr(0, 5) === '/qrl.') {
-            return true;
-          }
+    value: function () {
+      var _validApi = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee3(apiCall) {
+        var client;
+        return regeneratorRuntime.wrap(function _callee3$(_context3) {
+          while (1) {
+            switch (_context3.prev = _context3.next) {
+              case 0:
+                _context3.prev = 0;
+                _context3.next = 3;
+                return this.client;
 
-          return false;
-        } catch (error) {
-          return false;
-        }
-      });
-    }
+              case 3:
+                client = _context3.sent;
+
+                if (!(client[apiCall].path.substr(0, 5) === '/qrl.')) {
+                  _context3.next = 6;
+                  break;
+                }
+
+                return _context3.abrupt("return", true);
+
+              case 6:
+                return _context3.abrupt("return", false);
+
+              case 9:
+                _context3.prev = 9;
+                _context3.t0 = _context3["catch"](0);
+                return _context3.abrupt("return", false);
+
+              case 12:
+              case "end":
+                return _context3.stop();
+            }
+          }
+        }, _callee3, this, [[0, 9]]);
+      }));
+
+      function validApi(_x7) {
+        return _validApi.apply(this, arguments);
+      }
+
+      return validApi;
+    }()
   }, {
     key: "api",
-    value: function api(apiCall) {
-      var _this2 = this;
+    value: function () {
+      var _api = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee6(apiCall) {
+        var _this2 = this;
 
-      var request = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-      return new Promise( /*#__PURE__*/function () {
-        var _ref = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee2(resolve, reject) {
-          var client;
-          return regeneratorRuntime.wrap(function _callee2$(_context2) {
-            while (1) {
-              switch (_context2.prev = _context2.next) {
-                case 0:
-                  _context2.next = 2;
-                  return _this2.client;
+        var request,
+            _args6 = arguments;
+        return regeneratorRuntime.wrap(function _callee6$(_context6) {
+          while (1) {
+            switch (_context6.prev = _context6.next) {
+              case 0:
+                request = _args6.length > 1 && _args6[1] !== undefined ? _args6[1] : {};
+                _context6.prev = 1;
+                return _context6.abrupt("return", new Promise( /*#__PURE__*/function () {
+                  var _ref3 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee5(resolve, reject) {
+                    var client;
+                    return regeneratorRuntime.wrap(function _callee5$(_context5) {
+                      while (1) {
+                        switch (_context5.prev = _context5.next) {
+                          case 0:
+                            _context5.next = 2;
+                            return _this2.client;
 
-                case 2:
-                  client = _context2.sent;
-                  client[apiCall](request, /*#__PURE__*/function () {
-                    var _ref2 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(error, response) {
-                      return regeneratorRuntime.wrap(function _callee$(_context) {
-                        while (1) {
-                          switch (_context.prev = _context.next) {
-                            case 0:
-                              if (error) {
-                                reject(error);
-                              }
+                          case 2:
+                            client = _context5.sent;
+                            client[apiCall](request, /*#__PURE__*/function () {
+                              var _ref4 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee4(error, response) {
+                                return regeneratorRuntime.wrap(function _callee4$(_context4) {
+                                  while (1) {
+                                    switch (_context4.prev = _context4.next) {
+                                      case 0:
+                                        if (error) {
+                                          reject(error);
+                                        }
 
-                              resolve(response);
+                                        resolve(response);
 
-                            case 2:
-                            case "end":
-                              return _context.stop();
-                          }
+                                      case 2:
+                                      case "end":
+                                        return _context4.stop();
+                                    }
+                                  }
+                                }, _callee4);
+                              }));
+
+                              return function (_x11, _x12) {
+                                return _ref4.apply(this, arguments);
+                              };
+                            }());
+
+                          case 4:
+                          case "end":
+                            return _context5.stop();
                         }
-                      }, _callee);
-                    }));
+                      }
+                    }, _callee5);
+                  }));
 
-                    return function (_x7, _x8) {
-                      return _ref2.apply(this, arguments);
-                    };
-                  }());
+                  return function (_x9, _x10) {
+                    return _ref3.apply(this, arguments);
+                  };
+                }()));
 
-                case 4:
-                case "end":
-                  return _context2.stop();
-              }
+              case 5:
+                _context6.prev = 5;
+                _context6.t0 = _context6["catch"](1);
+                console.log('Unable to make API call (' + _context6.t0 + ')');
+
+              case 8:
+              case "end":
+                return _context6.stop();
             }
-          }, _callee2);
-        }));
+          }
+        }, _callee6, null, [[1, 5]]);
+      }));
 
-        return function (_x5, _x6) {
-          return _ref.apply(this, arguments);
-        };
-      }());
-    }
+      function api(_x8) {
+        return _api.apply(this, arguments);
+      }
+
+      return api;
+    }()
   }]);
 
   return QrlNode;
