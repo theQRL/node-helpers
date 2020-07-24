@@ -42,7 +42,7 @@ describe('#mainnet', function() {
         })
       })
     }
-    await expect(await node()).to.equal('SYNCED')
+    await expect(node()).to.eventually.equal('SYNCED')
   })
 
   it('expect GetOTS to function if called from existing client connection', async function() {
