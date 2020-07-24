@@ -34,7 +34,7 @@ describe('#mainnet', function() {
     async function node() {
       return new Promise(async (resolve, reject) => {
         const client = await mainnet.connect()
-        return await client.GetStats({}, async (error, response) => {
+        return await client.GetStats({}, (error, response) => {
           if (error) {
             throw new Error(error)
           }
@@ -42,7 +42,7 @@ describe('#mainnet', function() {
         })
       })
     }
-    await expect(await node()).to.equal('SYNCED')
+    await expect(node()).to.eventually.equal('SYNCED')
   })
 
   it('expect GetOTS to function if called from existing client connection', async function() {
@@ -94,7 +94,7 @@ describe('#mainnet', function() {
         let id = null
         var testnet = new QrlNode(ip, port)
         const client = await testnet.connect()
-        client.GetStats({}, async (error, response) => {
+        client.GetStats({}, (error, response) => {
           if (error) {
             throw new Error(error)
           }

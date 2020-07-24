@@ -4,7 +4,6 @@ node_js:
 install:
   - npm install
 script:
-  - npm run test
   - mkdir coverage
   - npm run cover
 after_script: cat coverage/lcov.info | node_modules/coveralls/bin/coveralls.js
