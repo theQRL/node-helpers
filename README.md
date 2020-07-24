@@ -1,6 +1,6 @@
 # @theqrl/node-helpers
 
-[![Build Status](https://travis-ci.org/theQRL/node-helpers.svg?branch=master)](https://travis-ci.org/theQRL/node-helpers) [![Coverage Status](https://coveralls.io/repos/github/theQRL/node-helpers/badge.svg?branch=master)](https://coveralls.io/github/theQRL/node-helpers?branch=master) [![npm version](https://badge.fury.io/js/%40theqrl%2Fnode-helpers.svg)](https://badge.fury.io/js/%40theqrl%2Fnode-helpers) ![GitHub](https://img.shields.io/github/license/theqrl/node-helpers)
+[![Build Status](https://travis-ci.com/theQRL/node-helpers.svg?branch=master)](https://travis-ci.com/theQRL/node-helpers) [![Coverage Status](https://coveralls.io/repos/github/theQRL/node-helpers/badge.svg?branch=master)](https://coveralls.io/github/theQRL/node-helpers?branch=master) [![npm version](https://badge.fury.io/js/%40theqrl%2Fnode-helpers.svg)](https://badge.fury.io/js/%40theqrl%2Fnode-helpers) ![GitHub](https://img.shields.io/github/license/theqrl/node-helpers)
 
 A helper library for interacting with QRL nodes via GRPC
 
