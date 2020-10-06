@@ -5,7 +5,7 @@ var chai = require("chai")
 chai.use(chaiAsPromised)
 var expect = chai.expect
 var assert = chai.assert
-var ip = 'mainnet-1.automated.theqrl.org'
+var ip = 'mainnet-3.automated.theqrl.org'
 var port = '19009'
 
 // process.on('unhandledRejection', error => {

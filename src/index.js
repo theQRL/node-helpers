@@ -14,7 +14,7 @@ let PROTO_PATH = __dirname + '/node_modules/@theqrl/qrlbase.proto/qrlbase.proto'
 if (__dirname.includes('/src')) {
   PROTO_PATH = __dirname + '/../node_modules/@theqrl/qrlbase.proto/qrlbase.proto'
 }
-console.log('protopath is: ', PROTO_PATH)
+// console.log('protopath is: ', PROTO_PATH)
 let qrlClient = null
 
 function clientGetNodeInfo (client) {
