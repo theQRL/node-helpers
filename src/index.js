@@ -10,7 +10,7 @@ const fs = require('fs')
 const util = require('util')
 const readFile = util.promisify(fs.readFile)
 const writeFile = util.promisify(fs.writeFile)
-const PROTO_PATH = 'node_modules/@theqrl/qrlbase.proto/qrlbase.proto'
+const PROTO_PATH = __dirname + '/../../qrlbase.proto/qrlbase.proto'
 let qrlClient = null
 
 function clientGetNodeInfo (client) {
@@ -131,7 +131,7 @@ async function makeClient(grpcEndpoint) {
 
 class QrlNode {
   constructor(ipAddress, port) {
-    this.version = '0.5.2'
+    this.version = '0.5.3'
     this.connection = false
     this.client = null
     this.ipAddress = ipAddress
