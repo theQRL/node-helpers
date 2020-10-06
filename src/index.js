@@ -10,11 +10,7 @@ const fs = require('fs')
 const util = require('util')
 const readFile = util.promisify(fs.readFile)
 const writeFile = util.promisify(fs.writeFile)
-let PROTO_PATH = __dirname + '/node_modules/@theqrl/qrlbase.proto/qrlbase.proto'
-if (__dirname.includes('/src')) {
-  PROTO_PATH = __dirname + '/../node_modules/@theqrl/qrlbase.proto/qrlbase.proto'
-}
-// console.log('protopath is: ', PROTO_PATH)
+let PROTO_PATH = __dirname + '/../node_modules/@theqrl/qrlbase.proto/qrlbase.proto'
 let qrlClient = null
 
 function clientGetNodeInfo (client) {
