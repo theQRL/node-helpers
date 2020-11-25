@@ -41,7 +41,7 @@ if (__dirname.includes('/node_modules/')) {
 var GOOGLE_PATH = __dirname + '/../node_modules/google-proto-files/';
 
 if (__dirname.includes('/node_modules/')) {
-  GOOGLE_PATH = __dirname + '/../../google-proto-files/';
+  GOOGLE_PATH = __dirname + '/../../../google-proto-files/';
 }
 
 var qrlClient = null;
