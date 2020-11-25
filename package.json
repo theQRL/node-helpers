@@ -14,7 +14,7 @@
     "build": "babel src --out-dir ./dist --source-maps",
     "serve": "node ./dist/index.js",
     "lint": "eslint .",
-    "test": "nyc ./node_modules/.bin/mocha --timeout 10000 --require @babel/register",
+    "test": "nyc ./node_modules/.bin/mocha --timeout 30000 --require @babel/register",
     "debug": "node --inspect-brk ./dist/index.js",
     "cover": "nyc --reporter=text ./node_modules/mocha/bin/_mocha test/*.js --timeout 10000 && nyc --reporter=text-lcov ./node_modules/mocha/bin/_mocha --timeout 10000 test/*.js > coverage/lcov.info"
   },
