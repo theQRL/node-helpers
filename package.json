@@ -1,6 +1,6 @@
 {
   "name": "@theqrl/node-helpers",
-  "version": "0.5.5",
+  "version": "0.6.0",
   "description": "QRL node helpers",
   "main": "dist/index.js",
   "directories": {
@@ -72,13 +72,13 @@
   },
   "dependencies": {
     "@babel/polyfill": "^7.10.4",
-    "@grpc/grpc-js": "^1.1.2",
+    "@grpc/grpc-js": "^1.2.1",
     "@grpc/proto-loader": "^0.5.5",
     "@theqrl/qrl-proto-sha256": "^3.0.0",
     "@theqrl/qrlbase.proto": "^1.0.0",
     "crypto-js": "^4.0.0",
+    "google-proto-files": "^2.3.0",
     "google-protobuf": "^3.12.2",
-    "grpc-js-kit": "^0.1.0",
     "tmp": "^0.2.1"
   }
 }
