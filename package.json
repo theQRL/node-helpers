@@ -74,7 +74,7 @@
     "@babel/polyfill": "^7.10.4",
     "@grpc/grpc-js": "^1.2.1",
     "@grpc/proto-loader": "^0.5.5",
-    "@theqrl/qrl-proto-sha256": "^3.0.0",
+    "@theqrl/qrl-proto-sha256": "^3.1.0",
     "@theqrl/qrlbase.proto": "^1.0.0",
     "crypto-js": "^4.0.0",
     "google-proto-files": "^2.3.0",
