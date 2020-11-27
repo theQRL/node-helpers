@@ -18,14 +18,11 @@ var protoLoader = require('@grpc/proto-loader');
 
 var CryptoJS = require('crypto-js');
 
-var _require = require('grpc-js-kit'),
-    createClient = _require.createClient;
+var _require = require('util'),
+    promisify = _require.promisify;
 
-var _require2 = require('util'),
-    promisify = _require2.promisify;
-
-var _require3 = require('@theqrl/qrl-proto-sha256'),
-    QRLPROTO_SHA256 = _require3.QRLPROTO_SHA256;
+var _require2 = require('@theqrl/qrl-proto-sha256'),
+    QRLPROTO_SHA256 = _require2.QRLPROTO_SHA256;
 
 var tmp = require('tmp');
 
@@ -35,7 +32,18 @@ var util = require('util');
 
 var readFile = util.promisify(fs.readFile);
 var writeFile = util.promisify(fs.writeFile);
-var PROTO_PATH = 'node_modules/@theqrl/qrlbase.proto/qrlbase.proto';
+var PROTO_PATH = __dirname + '/../node_modules/@theqrl/qrlbase.proto/qrlbase.proto';
+
+if (__dirname.includes('/node_modules/')) {
+  PROTO_PATH = __dirname + '/../../qrlbase.proto/qrlbase.proto';
+}
+
+var GOOGLE_PATH = __dirname + '/../node_modules/google-proto-files/';
+
+if (__dirname.includes('/node_modules/')) {
+  GOOGLE_PATH = __dirname + '/../../../google-proto-files/';
+}
+
 var qrlClient = null;
 
 function clientGetNodeInfo(client) {
@@ -137,18 +145,18 @@ function _loadGrpcProto() {
       while (1) {
         switch (_context7.prev = _context7.next) {
           case 0:
-            _context7.prev = 0;
             options = {
               keepCase: true,
               longs: String,
               enums: String,
               defaults: true,
-              oneofs: true
+              oneofs: true,
+              includeDirs: [GOOGLE_PATH]
             };
-            _context7.next = 4;
+            _context7.next = 3;
             return protoLoader.load(protofile, options);
 
-          case 4:
+          case 3:
             packageDefinition = _context7.sent;
             grpcObject = grpc.loadPackageDefinition(packageDefinition);
             grpcObjectString = JSON.stringify(grpcObject.qrl);
@@ -164,43 +172,18 @@ function _loadGrpcProto() {
             }); // If the grpc object shasum matches, establish the grpc connection.
 
             if (!verified) {
-              _context7.next = 16;
+              _context7.next = 12;
               break;
             }
 
-            _context7.next = 14;
-            return createClient({
-              protoPath: protofile,
-              packageName: 'qrl',
-              serviceName: 'PublicAPI',
-              options: {
-                keepCase: true,
-                longs: String,
-                enums: String,
-                defaults: true,
-                oneofs: true
-              }
-            }, endpoint);
+            return _context7.abrupt("return", new grpcObject.qrl.PublicAPI(endpoint, grpc.credentials.createInsecure()));
 
-          case 14:
-            qrlClient = _context7.sent;
-            return _context7.abrupt("return", qrlClient);
-
-          case 16:
-            _context7.next = 21;
-            break;
-
-          case 18:
-            _context7.prev = 18;
-            _context7.t0 = _context7["catch"](0);
-            console.log('Unable to load grpc proto file (' + _context7.t0 + ')');
-
-          case 21:
+          case 12:
           case "end":
             return _context7.stop();
         }
       }
-    }, _callee7, null, [[0, 18]]);
+    }, _callee7);
   }));
   return _loadGrpcProto.apply(this, arguments);
 }
@@ -216,50 +199,44 @@ function _makeClient() {
       while (1) {
         switch (_context8.prev = _context8.next) {
           case 0:
-            _context8.prev = 0;
-            _context8.next = 3;
+            _context8.next = 2;
             return loadGrpcBaseProto(grpcEndpoint);
 
-          case 3:
+          case 2:
             proto = _context8.sent;
 
             if (!proto) {
-              _context8.next = 13;
+              _context8.next = 12;
               break;
             }
 
-            _context8.next = 7;
+            _context8.next = 6;
             return checkProtoHash(proto);
 
-          case 7:
+          case 6:
             validHash = _context8.sent;
 
             if (!validHash) {
-              _context8.next = 13;
+              _context8.next = 12;
               break;
             }
 
-            _context8.next = 11;
+            _context8.next = 10;
             return loadGrpcProto(proto, grpcEndpoint);
 
-          case 11:
+          case 10:
             client = _context8.sent;
             return _context8.abrupt("return", client);
 
-          case 13:
+          case 12:
             return _context8.abrupt("return", null);
 
-          case 16:
-            _context8.prev = 16;
-            _context8.t0 = _context8["catch"](0);
-            console.log('Unable to make client (' + _context8.t0 + ')');
-
-          case 19:
+          case 13:
           case "end":
             return _context8.stop();
         }
       }
-    }, _callee8, null, [[0, 16]]);
+    }, _callee8);
   }));
   return _makeClient.apply(this, arguments);
 }
@@ -268,7 +245,7 @@ var QrlNode = /*#__PURE__*/function () {
   function QrlNode(ipAddress, port) {
     _classCallCheck(this, QrlNode);
 
-    this.version = '0.5.2';
+    this.version = '0.6.0';
     this.connection = false;
     this.client = null;
     this.ipAddress = ipAddress;
@@ -277,56 +254,50 @@ var QrlNode = /*#__PURE__*/function () {
 
   _createClass(QrlNode, [{
     key: "connect",
-    value: function connect() {
-      var _this = this;
-
-      try {
-        return new Promise( /*#__PURE__*/function () {
-          var _ref2 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee2(resolve, reject) {
-            var client;
-            return regeneratorRuntime.wrap(function _callee2$(_context2) {
-              while (1) {
-                switch (_context2.prev = _context2.next) {
-                  case 0:
-                    if (!(_this.connection === false)) {
-                      _context2.next = 7;
-                      break;
-                    }
-
-                    _context2.next = 3;
-                    return makeClient("".concat(_this.ipAddress, ":").concat(_this.port));
-
-                  case 3:
-                    client = _context2.sent;
-
-                    if (client === null) {
-                      _this.connection = false;
-                    } else {
-                      _this.connection = true;
-                    }
-
-                    _this.client = client;
-                    resolve(client);
-
-                  case 7:
-                    reject('Already connected... disconnect first or create a new connection');
-
-                  case 8:
-                  case "end":
-                    return _context2.stop();
+    value: function () {
+      var _connect = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee2() {
+        var client;
+        return regeneratorRuntime.wrap(function _callee2$(_context2) {
+          while (1) {
+            switch (_context2.prev = _context2.next) {
+              case 0:
+                if (!(this.connection === false)) {
+                  _context2.next = 7;
+                  break;
                 }
-              }
-            }, _callee2);
-          }));
 
-          return function (_x5, _x6) {
-            return _ref2.apply(this, arguments);
-          };
-        }());
-      } catch (error) {
-        console.log(error);
+                _context2.next = 3;
+                return makeClient("".concat(this.ipAddress, ":").concat(this.port));
+
+              case 3:
+                client = _context2.sent;
+
+                if (client === null) {
+                  this.connection = false;
+                } else {
+                  this.connection = true;
+                }
+
+                this.client = client;
+                return _context2.abrupt("return", client);
+
+              case 7:
+                throw new Error('Already connected');
+
+              case 8:
+              case "end":
+                return _context2.stop();
+            }
+          }
+        }, _callee2, this);
+      }));
+
+      function connect() {
+        return _connect.apply(this, arguments);
       }
-    }
+
+      return connect;
+    }()
   }, {
     key: "disconnect",
     value: function disconnect() {
@@ -372,7 +343,7 @@ var QrlNode = /*#__PURE__*/function () {
         }, _callee3, this, [[0, 9]]);
       }));
 
-      function validApi(_x7) {
+      function validApi(_x5) {
         return _validApi.apply(this, arguments);
       }
 
@@ -382,7 +353,7 @@ var QrlNode = /*#__PURE__*/function () {
     key: "api",
     value: function () {
       var _api = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee6(apiCall) {
-        var _this2 = this;
+        var _this = this;
 
         var request,
             _args6 = arguments;
@@ -393,19 +364,19 @@ var QrlNode = /*#__PURE__*/function () {
                 request = _args6.length > 1 && _args6[1] !== undefined ? _args6[1] : {};
                 _context6.prev = 1;
                 return _context6.abrupt("return", new Promise( /*#__PURE__*/function () {
-                  var _ref3 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee5(resolve, reject) {
+                  var _ref2 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee5(resolve, reject) {
                     var client;
                     return regeneratorRuntime.wrap(function _callee5$(_context5) {
                       while (1) {
                         switch (_context5.prev = _context5.next) {
                           case 0:
                             _context5.next = 2;
-                            return _this2.client;
+                            return _this.client;
 
                           case 2:
                             client = _context5.sent;
                             client[apiCall](request, /*#__PURE__*/function () {
-                              var _ref4 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee4(error, response) {
+                              var _ref3 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee4(error, response) {
                                 return regeneratorRuntime.wrap(function _callee4$(_context4) {
                                   while (1) {
                                     switch (_context4.prev = _context4.next) {
@@ -424,8 +395,8 @@ var QrlNode = /*#__PURE__*/function () {
                                 }, _callee4);
                               }));
 
-                              return function (_x11, _x12) {
-                                return _ref4.apply(this, arguments);
+                              return function (_x9, _x10) {
+                                return _ref3.apply(this, arguments);
                               };
                             }());
 
@@ -437,8 +408,8 @@ var QrlNode = /*#__PURE__*/function () {
                     }, _callee5);
                   }));
 
-                  return function (_x9, _x10) {
-                    return _ref3.apply(this, arguments);
+                  return function (_x7, _x8) {
+                    return _ref2.apply(this, arguments);
                   };
                 }()));
 
@@ -455,7 +426,7 @@ var QrlNode = /*#__PURE__*/function () {
         }, _callee6, null, [[1, 5]]);
       }));
 
-      function api(_x8) {
+      function api(_x6) {
         return _api.apply(this, arguments);
       }
 

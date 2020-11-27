@@ -2,7 +2,6 @@ require('@babel/polyfill')
 const grpc = require('@grpc/grpc-js')
 const protoLoader = require('@grpc/proto-loader')
 const CryptoJS = require('crypto-js')
-const { createClient } = require('grpc-js-kit')
 const { promisify } = require('util')
 const { QRLPROTO_SHA256 } = require('@theqrl/qrl-proto-sha256')
 const tmp = require('tmp')
@@ -13,6 +12,10 @@ const writeFile = util.promisify(fs.writeFile)
 let PROTO_PATH = __dirname + '/../node_modules/@theqrl/qrlbase.proto/qrlbase.proto'
 if (__dirname.includes('/node_modules/')) {
   PROTO_PATH = __dirname + '/../../qrlbase.proto/qrlbase.proto'
+}
+let GOOGLE_PATH = __dirname + '/../node_modules/google-proto-files/'
+if (__dirname.includes('/node_modules/')) {
+  GOOGLE_PATH = __dirname + '/../../../google-proto-files/'
 }
 let qrlClient = null
 
@@ -73,13 +76,13 @@ function loadGrpcBaseProto(grpcEndpoint) {
 }
 
 async function loadGrpcProto(protofile, endpoint) {
-  try {
     const options = {
       keepCase: true,
       longs: String,
       enums: String,
       defaults: true,
       oneofs: true,
+      includeDirs: [GOOGLE_PATH],
     }
     const packageDefinition = await protoLoader.load(protofile, options)
     const grpcObject = grpc.loadPackageDefinition(packageDefinition)
@@ -96,69 +99,47 @@ async function loadGrpcProto(protofile, endpoint) {
     })
     // If the grpc object shasum matches, establish the grpc connection.
     if (verified) {
-      qrlClient = await createClient({
-        protoPath: protofile,
-        packageName: 'qrl',
-        serviceName: 'PublicAPI',
-        options: {
-          keepCase: true,
-          longs: String,
-          enums: String,
-          defaults: true,
-          oneofs: true,
-        },
-      }, endpoint)
-      return qrlClient
+      return new grpcObject.qrl.PublicAPI(
+        endpoint,
+        grpc.credentials.createInsecure()
+      )
     }
-  } catch (error) {
-    console.log('Unable to load grpc proto file (' + error + ')')
-  }
 }
 
 async function makeClient(grpcEndpoint) {
-  try {
     const proto = await loadGrpcBaseProto(grpcEndpoint)
     if (proto) {
-      const validHash = await checkProtoHash(proto)
+      let validHash = await checkProtoHash(proto)
       if (validHash) {
         const client = await loadGrpcProto(proto, grpcEndpoint)
         return client
       }
     }
     return null
-  } catch (error) {
-    console.log('Unable to make client (' + error + ')')
-  }
 }
 
 
 class QrlNode {
   constructor(ipAddress, port) {
-    this.version = '0.5.3'
+    this.version = '0.6.0'
     this.connection = false
     this.client = null
     this.ipAddress = ipAddress
     this.port = port
   }
 
-  connect() {
-    try {
-      return new Promise(async (resolve, reject) => {
-        if (this.connection === false) {
-          const client = await makeClient(`${this.ipAddress}:${this.port}`)
-          if (client === null) {
-            this.connection = false
-          } else {
-            this.connection = true
-          }
-          this.client = client
-          resolve(client)
-        }
-        reject('Already connected... disconnect first or create a new connection')
-      })
-    } catch (error) {
-      console.log(error)
+  async connect() {
+    if (this.connection === false) {
+      const client = await makeClient(`${this.ipAddress}:${this.port}`)
+      if (client === null) {
+        this.connection = false
+      } else {
+        this.connection = true
+      }
+      this.client = client
+      return client
     }
+    throw new Error('Already connected')
   }
 
   disconnect() {

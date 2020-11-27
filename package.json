@@ -1,6 +1,6 @@
 {
   "name": "@theqrl/node-helpers",
-  "version": "0.5.3",
+  "version": "0.6.0",
   "description": "QRL node helpers",
   "main": "dist/index.js",
   "directories": {
@@ -14,9 +14,9 @@
     "build": "babel src --out-dir ./dist --source-maps",
     "serve": "node ./dist/index.js",
     "lint": "eslint .",
-    "test": "nyc ./node_modules/.bin/mocha --require @babel/register",
+    "test": "nyc ./node_modules/.bin/mocha --timeout 30000 --require @babel/register",
     "debug": "node --inspect-brk ./dist/index.js",
-    "cover": "nyc --reporter=text ./node_modules/mocha/bin/_mocha test/*.js && nyc --reporter=text-lcov ./node_modules/mocha/bin/_mocha test/*.js > coverage/lcov.info"
+    "cover": "nyc --reporter=text ./node_modules/mocha/bin/_mocha test/*.js --timeout 10000 && nyc --reporter=text-lcov ./node_modules/mocha/bin/_mocha --timeout 10000 test/*.js > coverage/lcov.info"
   },
   "repository": {
     "type": "git",
@@ -72,13 +72,13 @@
   },
   "dependencies": {
     "@babel/polyfill": "^7.10.4",
-    "@grpc/grpc-js": "^1.1.2",
+    "@grpc/grpc-js": "^1.2.1",
     "@grpc/proto-loader": "^0.5.5",
-    "@theqrl/qrl-proto-sha256": "^3.0.0",
+    "@theqrl/qrl-proto-sha256": "^3.1.0",
     "@theqrl/qrlbase.proto": "^1.0.0",
     "crypto-js": "^4.0.0",
+    "google-proto-files": "^2.3.0",
     "google-protobuf": "^3.12.2",
-    "grpc-js-kit": "^0.1.0",
     "tmp": "^0.2.1"
   }
 }
