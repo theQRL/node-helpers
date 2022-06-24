@@ -5,7 +5,7 @@ var chai = require("chai")
 chai.use(chaiAsPromised)
 var expect = chai.expect
 var assert = chai.assert
-var ip = 'mainnet-1.automated.theqrl.org'
+var ip = 'mainnet-3.automated.theqrl.org'
 var port = '19009'
 
 // process.on('unhandledRejection', error => {
@@ -86,7 +86,7 @@ describe('#mainnet', function() {
     await expect(node()).to.eventually.equal(false)
   })
 
-  it('testnet node should have \'The Random Genesis\' as its network_id', async function() {
+  it('testnet node should have \'Testnet 2022\' as its network_id', async function() {
     async function node() {
       return new Promise(async (resolve, reject) => {
         ip = 'testnet-1.automated.theqrl.org'
@@ -102,7 +102,7 @@ describe('#mainnet', function() {
         })
       })
     }
-    await expect(node()).to.eventually.equal('The Random Genesis')
+    await expect(node()).to.eventually.equal('Testnet 2022')
   })
 
   it('.disconnect() should reset client and return .connection = false', function() {
