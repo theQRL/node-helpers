@@ -64,7 +64,7 @@ function loadGrpcBaseProto(grpcEndpoint) {
           postfix: '.proto'
         }).name
         writeFile(qrlProtoFilePath, res.grpcProto).then(fsErr => {
-          if (fsErr) { console.log('tmp filesystem error')}
+          if (fsErr) { console.log('tmp filesystem error') }
         })
         return(qrlProtoFilePath)
       } catch (error) {
