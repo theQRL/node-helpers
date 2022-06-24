@@ -64,9 +64,7 @@ function loadGrpcBaseProto(grpcEndpoint) {
           postfix: '.proto'
         }).name
         writeFile(qrlProtoFilePath, res.grpcProto).then(fsErr => {
-          if (fsErr) {
-            console.log('tmp filesystem error')
-          }
+          if (fsErr) { console.log('tmp filesystem error')}
         })
         return(qrlProtoFilePath)
       } catch (error) {
@@ -150,9 +148,7 @@ class QrlNode {
   async validApi(apiCall) {
     try {
       const client = await this.client
-      if (client[apiCall].path.substr(0, 5) === '/qrl.') {
-        return true
-      }
+      if (client[apiCall].path.substr(0, 5) === '/qrl.') { return true }
       return false
     } catch (error) {
       return false
