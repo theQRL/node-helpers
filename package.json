@@ -10,7 +10,7 @@
     "build": "babel src --out-dir ./dist --source-maps",
     "lint": "eslint .",
     "test": "nyc ./node_modules/.bin/mocha --timeout 30000 --require @babel/register",
-    "cover": "nyc --reporter=text ./node_modules/mocha/bin/_mocha test/*.js --timeout 10000 && nyc --reporter=text-lcov ./node_modules/mocha/bin/_mocha --timeout 10000 test/*.js > coverage/lcov.info"
+    "cover": "nyc --reporter=text ./node_modules/mocha/bin/_mocha test/*.js --timeout 30000 && nyc --reporter=text-lcov ./node_modules/mocha/bin/_mocha --timeout 30000 test/*.js > coverage/lcov.info"
   },
   "repository": {
     "type": "git",
