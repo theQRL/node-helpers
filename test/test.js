@@ -2,6 +2,7 @@ var QrlNode  = require('../src/index.js')
 
 var chaiAsPromised = require("chai-as-promised")
 var chai = require("chai")
+const { step } = require('mocha-steps')
 chai.use(chaiAsPromised)
 var expect = chai.expect
 var assert = chai.assert
@@ -15,22 +16,22 @@ var port = '19009'
 
 describe('#mainnet', function() {
   var mainnet = new QrlNode(ip, port)
-  it(`.version should report same version as in npm package.json file (=${process.env.npm_package_version})`, function() {
+  step(`.version should report same version as in npm package.json file (=${process.env.npm_package_version})`, function() {
     var result = mainnet.version
     expect(result).to.equal(process.env.npm_package_version)
   })
 
-  it(`.ipAddress should report same as invoked in setup (${ip})`, function() {
+  step(`.ipAddress should report same as invoked in setup (${ip})`, function() {
     var result = mainnet.ipAddress
     expect(ip).to.equal(result)
   }) 
 
-  it(`.port should report same as invoked in setup (${port})`, function() {
+  step(`.port should report same as invoked in setup (${port})`, function() {
     var result = mainnet.port
     expect(port).to.equal(result)
   }) 
 
-  it('mainnet node should report SYNCED', async function() {
+  step('mainnet node should report SYNCED', async function() {
     async function node() {
       return new Promise(async (resolve, reject) => {
         const client = await mainnet.connect()
@@ -42,10 +43,10 @@ describe('#mainnet', function() {
         })
       })
     }
-    await expect(node()).to.eventually.equal('SYNCED')
+    return await expect(node()).to.eventually.equal('SYNCED')
   })
 
-  it('expect GetOTS to function if called from existing client connection', async function() {
+  step('expect GetOTS to function if called from existing client connection', async function() {
     async function node() {
       return new Promise(async (resolve, reject) => {
         const request = {
@@ -60,17 +61,17 @@ describe('#mainnet', function() {
         })
       })
     }
-    await expect(node()).to.eventually.equal(true)
+    return await expect(node()).to.eventually.equal(true)
   })
 
-  it('a second attempted connection should have its Promise rejected', async function() {
+  step('a second attempted connection should have its Promise rejected', async function() {
     async function node() {
       return await mainnet.connect()
     }
-    await expect(node()).to.eventually.be.rejected
+    return await expect(node()).to.eventually.be.rejected
   })
   
-  it('an invalid node ip/port should result in a null connecion', async function() {
+  step('an invalid node ip/port should result in a null connecion', async function() {
     async function node() {
       const badip = 'bad-ip.automated.theqrl.org'
       const badport = '19009'
@@ -83,10 +84,10 @@ describe('#mainnet', function() {
       }
       return testnet.connection
     }
-    await expect(node()).to.eventually.equal(false)
+    return await expect(node()).to.eventually.equal(false)
   })
 
-  it('testnet node should have \'Testnet 2022\' as its network_id', async function() {
+  step('testnet node should have \'Testnet 2022\' as its network_id', async function() {
     async function node() {
       return new Promise(async (resolve, reject) => {
         ip = 'testnet-1.automated.theqrl.org'
@@ -102,10 +103,10 @@ describe('#mainnet', function() {
         })
       })
     }
-    await expect(node()).to.eventually.equal('Testnet 2022')
+    return await expect(node()).to.eventually.equal('Testnet 2022')
   })
 
-  it('.disconnect() should reset client and return .connection = false', function() {
+  step('.disconnect() should reset client and return .connection = false', function() {
     mainnet.disconnect()
     var status = mainnet.connection
     var client = mainnet.client
@@ -113,24 +114,24 @@ describe('#mainnet', function() {
     expect(client).to.equal(null)
   }) 
 
-  it('reconnection connection should have its Promise resolve', async function() {
+  step('reconnection connection should have its Promise resolve', async function() {
     async function node() {
       return await mainnet.connect()
     }
     await expect(node()).to.eventually.not.be.rejected
   })
 
-  it('expect GetOTS to be reported as a valid API call', async function() {
+  step('expect GetOTS to be reported as a valid API call', async function() {
     await expect(mainnet.validApi('GetOTS')).to.eventually.not.be.rejected
     await expect(mainnet.validApi('GetOTS')).to.eventually.to.equal(true)
   })  // await node to be ready before checking if API state is checkable
 
-  it('expect ThisIsInvalid to be reported as an invalid API call', async function() {
+  step('expect ThisIsInvalid to be reported as an invalid API call', async function() {
     await expect(mainnet.validApi('ThisIsInvalid')).to.eventually.not.be.rejected
     await expect(mainnet.validApi('ThisIsInvalid')).to.eventually.to.equal(false)
   })
 
-  it('mainnet node should report SYNCED after a GetStats API call', async function() {
+  step('mainnet node should report SYNCED after a GetStats API call', async function() {
     await expect(mainnet.api('GetStats')).to.eventually.have.property('node_info').property('state').equal('SYNCED')
   })
 
