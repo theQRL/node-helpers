@@ -65,7 +65,7 @@ testnet.connect().then(() => {
 
 ## Development of this module
 
-Development requires node version > 16.  If using nvm (which is recommended) then `nvm use` inside the cloned repo will set a correct node version.
+Development requires node.js version ≥ 16.  If using nvm (which is recommended) then `nvm use` inside the cloned repo will set a correct node version.
 
 `npm install` to install dependecies
 
