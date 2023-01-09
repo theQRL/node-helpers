@@ -12,17 +12,17 @@ describe('#mainnet', function() {
   var mainnet = new QrlNode(ip, port)
   it(`.version should report same version as in npm package.json file (=${process.env.npm_package_version})`, function() {
     var result = mainnet.version
-    expect(result).to.equal(process.env.npm_package_version)
+    return expect(result).to.equal(process.env.npm_package_version)
   })
 
   it(`.ipAddress should report same as invoked in setup (${ip})`, function() {
     var result = mainnet.ipAddress
-    expect(ip).to.equal(result)
+    return expect(ip).to.equal(result)
   }) 
 
   it(`.port should report same as invoked in setup (${port})`, function() {
     var result = mainnet.port
-    expect(port).to.equal(result)
+    return expect(port).to.equal(result)
   }) 
 
   it('mainnet node should report SYNCED', async function() {
@@ -37,7 +37,7 @@ describe('#mainnet', function() {
         })
       })
     }
-    await expect(node()).to.eventually.equal('SYNCED')
+    return await expect(node()).to.eventually.equal('SYNCED')
   })
 
   it('expect GetOTS to function if called from existing client connection', async function() {
@@ -55,14 +55,14 @@ describe('#mainnet', function() {
         })
       })
     }
-    await expect(node()).to.eventually.equal(true)
+    return await expect(node()).to.eventually.equal(true)
   })
 
   it('a second attempted connection should have its Promise rejected', async function() {
     async function node() {
       return await mainnet.connect()
     }
-    await expect(node()).to.eventually.be.rejected
+    return await expect(node()).to.eventually.be.rejected
   })
 
   it('an invalid node ip/port should result in a null connecion', async function() {
@@ -78,7 +78,7 @@ describe('#mainnet', function() {
       }
       return testnet.connection
     }
-    await expect(node()).to.eventually.equal(false)
+    return await expect(node()).to.eventually.equal(false)
   })
 
   it('testnet node should have \'Final Testnet\' as its network_id', async function() {
@@ -97,7 +97,7 @@ describe('#mainnet', function() {
         })
       })
     }
-    await expect(node()).to.eventually.equal('Final Testnet')
+    return await expect(node()).to.eventually.equal('Final Testnet')
   })
 
   it('.disconnect() should reset client and return .connection = false', function() {
@@ -112,7 +112,7 @@ describe('#mainnet', function() {
     async function node() {
       return await mainnet.connect()
     }
-    await expect(node()).to.eventually.not.be.rejected
+    return await expect(node()).to.eventually.not.be.rejected
   })
 
   it('expect GetOTS to be reported as a valid API call', async function() {
