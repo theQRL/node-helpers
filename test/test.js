@@ -126,11 +126,11 @@ describe('#mainnet', function() {
     }
   }
 
-  it('testnet node should have \'Testnet 2022\' as its network_id', async function() {
+  it('testnet node should have \'Final Testnet\' as its network_id', async function() {
     async function node() {
       return new Promise(async (resolve, reject) => {
-        ip = 'testnet-1.automated.theqrl.org'
-        port = '19009'
+        ip = 'testnet-4.automated.theqrl.org'
+        port = '29009'
         let id = null
         var testnet = new QrlNode(ip, port)
         const client = await testnet.connect()
@@ -143,7 +143,7 @@ describe('#mainnet', function() {
         })
       })
     }
-    await expect(node()).to.eventually.equal('Testnet 2022')
+    await expect(node()).to.eventually.equal('Final Testnet')
   })
 
   var check = function (done) {

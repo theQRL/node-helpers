@@ -119,7 +119,7 @@ async function makeClient(grpcEndpoint) {
 
 class QrlNode {
   constructor(ipAddress, port) {
-    this.version = '0.7.1'
+    this.version = '0.7.2'
     this.connection = false
     this.client = null
     this.ipAddress = ipAddress
