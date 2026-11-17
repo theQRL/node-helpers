@@ -1,232 +1,89 @@
-var QrlNode  = require('../src/index.js')
+const { test } = require('node:test')
+const assert = require('node:assert/strict')
+const { readFileSync } = require('node:fs')
+const path = require('node:path')
+const grpc = require('@grpc/grpc-js')
+const protoLoader = require('@grpc/proto-loader')
+const QrlNode = require('..')
+const { version } = require('../package.json')
 
-var chaiAsPromised = require("chai-as-promised")
-var chai = require("chai")
-chai.use(chaiAsPromised)
-var expect = chai.expect
-var assert = chai.assert
-var ip = 'mainnet-3.automated.theqrl.org'
-var port = '19009'
+const protoPath = path.join(__dirname, 'fixtures/qrl.proto')
+const proto = readFileSync(protoPath, 'utf8')
+const base = grpc.loadPackageDefinition(protoLoader.loadSync(
+  require.resolve('@theqrl/qrlbase.proto/qrlbase.proto')
+)).qrl
+const api = grpc.loadPackageDefinition(protoLoader.loadSync(protoPath, {
+  keepCase: true, longs: String, enums: String, defaults: true, oneofs: true,
+  includeDirs: [path.dirname(require.resolve('google-proto-files/package.json'))],
+})).qrl
 
-var state = 0
-
-// process.on('unhandledRejection', error => {
-  // uncomment to review unhandled Promise rejections to debug
-  // console.log('unhandledRejection', error.message)
-// })
-
-describe('#mainnet', function() {
-  var mainnet = new QrlNode(ip, port)
-  it(`.version should report same version as in npm package.json file (=${process.env.npm_package_version})`, function() {
-    var result = mainnet.version
-    expect(result).to.equal(process.env.npm_package_version)
+async function serve(t, getNodeInfo, getStats) {
+  const server = new grpc.Server()
+  server.addService(base.Base.service, { getNodeInfo })
+  if (getStats) server.addService(api.PublicAPI.service, { GetStats: getStats })
+  t.after(() => server.forceShutdown())
+  const port = await new Promise((resolve, reject) => {
+    server.bindAsync('127.0.0.1:0', grpc.ServerCredentials.createInsecure(), (error, port) => {
+      if (error) reject(error)
+      else resolve(port)
+    })
   })
+  const node = new QrlNode('127.0.0.1', port)
+  t.after(() => node.disconnect())
+  return node
+}
 
-  it(`.ipAddress should report same as invoked in setup (${ip})`, function() {
-    var result = mainnet.ipAddress
-    expect(ip).to.equal(result)
-  }) 
+test('constructor and disconnected API behavior', async () => {
+  const node = new QrlNode('localhost', 19009)
+  assert.equal(node.version, version)
+  assert.equal(node.ipAddress, 'localhost')
+  assert.equal(node.port, 19009)
+  assert.equal(node.client, null)
+  assert.equal(node.connection, false)
+  assert.equal(await node.validApi('GetStats'), false)
+  await assert.rejects(node.api('GetStats'), /Unavailable QRL API/)
+  node.disconnect()
+})
 
-  it(`.port should report same as invoked in setup (${port})`, function() {
-    var result = mainnet.port
-    expect(port).to.equal(result)
-  }) 
+test('connect, call, disconnect, and reconnect using an approved proto', async t => {
+  const node = await serve(t,
+    (_, callback) => callback(null, { grpcProto: proto }),
+    (call, callback) => {
+      assert.equal(call.request.include_timeseries, true)
+      callback(null, { node_info: { state: 'SYNCED' } })
+    })
+  assert.ok(await node.connect())
+  assert.equal(node.connection, true)
+  await assert.rejects(node.connect(), /Already connected/)
+  assert.equal(await node.validApi('GetStats'), true)
+  assert.equal(await node.validApi('missing'), false)
+  assert.equal(await node.validApi('close'), false)
+  assert.equal((await node.api('GetStats', { include_timeseries: true })).node_info.state, 'SYNCED')
+  await assert.rejects(node.api('missing'), /Unavailable QRL API/)
+  node.disconnect()
+  assert.equal(node.connection, false)
+  assert.equal(node.client, null)
+  assert.ok(await node.connect())
+})
 
-  it('mainnet node should report SYNCED', async function() {
-    async function node() {
-      return new Promise(async (resolve, reject) => {
-        const client = await mainnet.connect()
-        return await client.GetStats({}, (error, response) => {
-          if (error) {
-            throw new Error(error)
-          }
-          state = 1
-          resolve(response.node_info.state)
-        })
-      })
-    }
-    await expect(node()).to.eventually.equal('SYNCED')
-  })
+test('rejects unapproved proto bytes without connecting', async t => {
+  const node = await serve(t, (_, callback) => callback(null, { grpcProto: proto + '\n' }))
+  assert.equal(await node.connect(), null)
+  assert.equal(node.connection, false)
+  assert.equal(node.client, null)
+})
 
-  var check = function(done) {
-    if (state === 1) {
-      done()
-    } else {
-      setTimeout( function() { check(done) }, 1000)
-    }
-  }
+test('base RPC failures reject and leave the node disconnected', async t => {
+  const node = await serve(t, (_, callback) => callback({ code: grpc.status.UNAVAILABLE, details: 'offline' }))
+  await assert.rejects(node.connect(), /offline/)
+  assert.equal(node.connection, false)
+  assert.equal(node.client, null)
+})
 
-  it('expect GetOTS to function if called from existing client connection', async function() {
-    async function node() {
-      return new Promise(async (resolve, reject) => {
-        const request = {
-          address: Buffer.from('010500bc576efa69fd6cbc854f2224f149f0b0a4d18fcb30c1feab64781245f4f27a61874227f3', 'hex'),
-        }
-        const client = await mainnet.client
-        client.GetOTS(request, (error, response) => {
-          if (error) {
-            throw new Error(error)
-          }
-          state = 2
-          resolve(response.unused_ots_index_found)
-        })
-      })
-    }
-    await expect(node()).to.eventually.equal(true)
-  })
-
-  var check = function(done) {
-    if (state === 2) {
-      done()
-    } else {
-      setTimeout( function() { check(done) }, 1000)
-    }
-  }
-
-  it('a second attempted connection should have its Promise rejected', async function() {
-    async function node() {
-      return await mainnet.connect()
-    }
-    await expect(node()).to.eventually.be.rejected
-    state = 3
-  })
-  
-  var check = function(done) {
-    if (state === 3) {
-      done()
-    } else {
-      setTimeout( function() { check(done) }, 1000)
-    }
-  }
-
-  it('an invalid node ip/port should result in a null connecion', async function() {
-    async function node() {
-      const badip = 'bad-ip.automated.theqrl.org'
-      const badport = '19009'
-      let id = null
-      var testnet = new QrlNode(badip, badport)
-      try {
-        var client = await testnet.connect()
-      } catch (error) {
-        // consolse.log('er:', error)
-      }
-      state = 4
-      return testnet.connection
-    }
-    await expect(node()).to.eventually.equal(false)
-  })
-
-  var check = function (done) {
-    if (state === 4) {
-      done()
-    } else {
-      setTimeout(function () {
-        check(done)
-      }, 1000)
-    }
-  }
-
-  it('testnet node should have \'Testnet 2022\' as its network_id', async function() {
-    async function node() {
-      return new Promise(async (resolve, reject) => {
-        ip = 'testnet-1.automated.theqrl.org'
-        port = '19009'
-        let id = null
-        var testnet = new QrlNode(ip, port)
-        const client = await testnet.connect()
-        client.GetStats({}, (error, response) => {
-          if (error) {
-            throw new Error(error)
-          }
-          state = 5
-          resolve(response.node_info.network_id)
-        })
-      })
-    }
-    await expect(node()).to.eventually.equal('Testnet 2022')
-  })
-
-  var check = function (done) {
-    if (state === 5) {
-      done()
-    } else {
-      setTimeout(function () {
-        check(done)
-      }, 1000)
-    }
-  }
-
-  it('.disconnect() should reset client and return .connection = false', function() {
-    mainnet.disconnect()
-    var status = mainnet.connection
-    var client = mainnet.client
-    expect(status).to.equal(false)
-    expect(client).to.equal(null)
-    state = 6
-  }) 
-
-  var check = function (done) {
-    if (state === 6) {
-      done()
-    } else {
-      setTimeout(function () {
-        check(done)
-      }, 1000)
-    }
-  }
-
-  it('reconnection connection should have its Promise resolve', async function() {
-    async function node() {
-      return await mainnet.connect()
-    }
-    await expect(node()).to.eventually.not.be.rejected
-    state = 7
-  })
-
-  var check = function (done) {
-    if (state === 7) {
-      done()
-    } else {
-      setTimeout(function () {
-        check(done)
-      }, 1000)
-    }
-  }
-
-  it('expect GetOTS to be reported as a valid API call', async function() {
-    await expect(mainnet.validApi('GetOTS')).to.eventually.not.be.rejected
-    await expect(mainnet.validApi('GetOTS')).to.eventually.to.equal(true)
-    state = 8
-  })  // await node to be ready before checking if API state is checkable
-
-  var check = function (done) {
-    if (state === 8) {
-      done()
-    } else {
-      setTimeout(function () {
-        check(done)
-      }, 1000)
-    }
-  }
-
-  it('expect ThisIsInvalid to be reported as an invalid API call', async function() {
-    await expect(mainnet.validApi('ThisIsInvalid')).to.eventually.not.be.rejected
-    await expect(mainnet.validApi('ThisIsInvalid')).to.eventually.to.equal(false)
-    state = 9
-  })
-
-  var check = function (done) {
-    if (state === 9) {
-      done()
-    } else {
-      setTimeout(function () {
-        check(done)
-      }, 1000)
-    }
-  }
-
-  it('mainnet node should report SYNCED after a GetStats API call', async function() {
-    await expect(mainnet.api('GetStats')).to.eventually.have.property('node_info').property('state').equal('SYNCED')
-  })
-
+test('API RPC failures reject', async t => {
+  const node = await serve(t,
+    (_, callback) => callback(null, { grpcProto: proto }),
+    (_, callback) => callback({ code: grpc.status.INVALID_ARGUMENT, details: 'bad request' }))
+  await node.connect()
+  await assert.rejects(node.api('GetStats'), /bad request/)
 })

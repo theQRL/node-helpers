@@ -1,14 +1,13 @@
-var QrlNode = require('./dist/index.js')
+const QrlNode = require('./dist/index.js')
 
-var ip = 'testnet-1.automated.theqrl.org';
-var port = '19009';
-var testnet = new QrlNode(ip, port);
+async function main() {
+  const node = new QrlNode('testnet-1.automated.theqrl.org', 19009)
+  try {
+    if (!(await node.connect())) throw new Error('Node supplied an unapproved proto')
+    console.log(await node.api('GetStats'))
+  } finally {
+    node.disconnect()
+  }
+}
 
-testnet.connect().then(() => {
-  console.log(testnet.connection); // true if connection successful
-  // we can now start using the API
-  testnet.api('GetStats').then((result) => {
-    console.log(result);
-  });
-});
-
+main().catch(console.error)

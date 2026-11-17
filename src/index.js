@@ -1,125 +1,62 @@
-require('@babel/polyfill')
 const grpc = require('@grpc/grpc-js')
 const protoLoader = require('@grpc/proto-loader')
-const CryptoJS = require('crypto-js')
-const { promisify } = require('util')
+const { createHash } = require('node:crypto')
+const { mkdtemp, readFile, writeFile, rm } = require('node:fs/promises')
+const { tmpdir } = require('node:os')
+const path = require('node:path')
 const { QRLPROTO_SHA256 } = require('@theqrl/qrl-proto-sha256')
-const tmp = require('tmp')
-const fs = require('fs')
-const util = require('util')
-const readFile = util.promisify(fs.readFile)
-const writeFile = util.promisify(fs.writeFile)
-let PROTO_PATH = __dirname + '/../node_modules/@theqrl/qrlbase.proto/qrlbase.proto'
-if (__dirname.includes('/node_modules/')) {
-  PROTO_PATH = __dirname + '/../../qrlbase.proto/qrlbase.proto'
-}
-let GOOGLE_PATH = __dirname + '/../node_modules/google-proto-files/'
-if (__dirname.includes('/node_modules/')) {
-  GOOGLE_PATH = __dirname + '/../../../google-proto-files/'
-}
-let qrlClient = null
+const { version } = require('../package.json')
 
-function clientGetNodeInfo (client) {
-  try {
-    return new Promise((resolve, reject) => {
-      client.getNodeInfo({}, (error, response) => {
-        if (error) {
-          reject(error)
-        }
-        resolve(response)
-      })
-    })
-  } catch (error) {
-    console.log(error)
-  }
+const PROTO_PATH = require.resolve('@theqrl/qrlbase.proto/qrlbase.proto')
+const GOOGLE_PATH = path.dirname(require.resolve('google-proto-files/package.json'))
+
+function verifiedProto(contents) {
+  const hash = createHash('sha256').update(contents).digest('hex')
+  // Verify the downloaded bytes, rather than a loader-version-dependent object.
+  return QRLPROTO_SHA256.some(entry => entry.protoSha256 === hash)
 }
 
-function checkProtoHash(file) {
-  return readFile(file).then(contents => {
-    // console.log(contents)
-    const protoFileWordArray = CryptoJS.lib.WordArray.create(contents.toString())
-    const calculatedProtoHash = CryptoJS.SHA256(protoFileWordArray).toString(CryptoJS.enc.Hex)
-    let verified = false
-    QRLPROTO_SHA256.forEach(value => {
-      if (value.protoHash) {
-        if (value.protoHash === calculatedProtoHash) {
-          verified = true
-        }
-      }
+function call(client, method, request) {
+  return new Promise((resolve, reject) => {
+    client[method](request, (error, response) => {
+      if (error) reject(error)
+      else resolve(response)
     })
-    return verified
   })
 }
 
-function loadGrpcBaseProto(grpcEndpoint) {
-    return protoLoader.load(PROTO_PATH, {}).then(async packageDefinition => {
-      try {
-        const packageObject = await grpc.loadPackageDefinition(packageDefinition)
-        const client = await new packageObject.qrl.Base(grpcEndpoint, grpc.credentials.createInsecure())
-        // console.log(client)
-        const res = await clientGetNodeInfo(client)
-        const qrlProtoFilePath = tmp.fileSync({
-          mode: '0644',
-          prefix: 'qrl-',
-          postfix: '.proto'
-        }).name
-        writeFile(qrlProtoFilePath, res.grpcProto).then(fsErr => {
-          if (fsErr) { console.log('tmp filesystem error') }
-        })
-        return(qrlProtoFilePath)
-      } catch (error) {
-        console.log('Unable to load grpc base proto (' + error + ')')
-      }
-    })
-}
+async function makeClient(endpoint) {
+  let baseClient
+  let directory
+  try {
+    const definition = await protoLoader.load(PROTO_PATH)
+    const base = grpc.loadPackageDefinition(definition)
+    baseClient = new base.qrl.Base(endpoint, grpc.credentials.createInsecure())
+    const response = await call(baseClient, 'getNodeInfo', {})
+    directory = await mkdtemp(path.join(tmpdir(), 'qrl-'))
+    const proto = path.join(directory, 'qrl.proto')
+    await writeFile(proto, response.grpcProto)
+    if (!verifiedProto(await readFile(proto))) return null
 
-async function loadGrpcProto(protofile, endpoint) {
-    const options = {
+    const packageDefinition = await protoLoader.load(proto, {
       keepCase: true,
       longs: String,
       enums: String,
       defaults: true,
       oneofs: true,
       includeDirs: [GOOGLE_PATH],
-    }
-    const packageDefinition = await protoLoader.load(protofile, options)
-    const grpcObject = grpc.loadPackageDefinition(packageDefinition)
-    const grpcObjectString = JSON.stringify(grpcObject.qrl)
-    const protoObjectWordArray = CryptoJS.lib.WordArray.create(grpcObjectString)
-    const calculatedObjectHash = CryptoJS.SHA256(protoObjectWordArray).toString(CryptoJS.enc.Hex)
-    let verified = false
-    QRLPROTO_SHA256.forEach(value => {
-      if (value.objectHash) {
-        if (value.objectHash === calculatedObjectHash) {
-          verified = true
-        }
-      }
     })
-    // If the grpc object shasum matches, establish the grpc connection.
-    if (verified) {
-      return new grpcObject.qrl.PublicAPI(
-        endpoint,
-        grpc.credentials.createInsecure()
-      )
-    }
+    const api = grpc.loadPackageDefinition(packageDefinition).qrl
+    return new api.PublicAPI(endpoint, grpc.credentials.createInsecure())
+  } finally {
+    baseClient?.close()
+    if (directory) await rm(directory, { recursive: true, force: true })
+  }
 }
-
-async function makeClient(grpcEndpoint) {
-    const proto = await loadGrpcBaseProto(grpcEndpoint)
-    if (proto) {
-      let validHash = await checkProtoHash(proto)
-      if (validHash) {
-        const client = await loadGrpcProto(proto, grpcEndpoint)
-        return client
-      }
-    }
-    return null
-}
-
 
 class QrlNode {
   constructor(ipAddress, port) {
-    this.version = '0.7.1'
+    this.version = version
     this.connection = false
     this.client = null
     this.ipAddress = ipAddress
@@ -127,48 +64,28 @@ class QrlNode {
   }
 
   async connect() {
-    if (this.connection === false) {
-      const client = await makeClient(`${this.ipAddress}:${this.port}`)
-      if (client === null) {
-        this.connection = false
-      } else {
-        this.connection = true
-      }
-      this.client = client
-      return client
-    }
-    throw new Error('Already connected')
+    if (this.connection) throw new Error('Already connected')
+    this.client = await makeClient(`${this.ipAddress}:${this.port}`)
+    this.connection = this.client !== null
+    return this.client
   }
 
   disconnect() {
+    this.client?.close()
     this.client = null
     this.connection = false
   }
 
   async validApi(apiCall) {
-    try {
-      const client = await this.client
-      if (client[apiCall].path.substr(0, 5) === '/qrl.') { return true }
-      return false
-    } catch (error) {
-      return false
-    }
+    const method = this.client?.[apiCall]
+    return typeof method === 'function' && method.path?.startsWith('/qrl.') === true
   }
 
   async api(apiCall, request = {}) {
-    try {
-      return new Promise(async (resolve, reject) => {
-        const client = await this.client
-        client[apiCall](request, async (error, response) => {
-          if (error) {
-            reject(error)
-          }
-          resolve(response)
-        })
-      })
-    } catch (error) {
-      console.log('Unable to make API call (' + error + ')')
+    if (!(await this.validApi(apiCall))) {
+      throw new Error(`Unavailable QRL API: ${apiCall}`)
     }
+    return call(this.client, apiCall, request)
   }
 }
 
